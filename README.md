@@ -272,7 +272,7 @@ half; the plugin runs identically from its composed configuration.
 | Published packages | registry install verified: profile layer composed, host plugin loaded, client module served by a running web app |
 | Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 25/25 fixture agreement, 0 errors, mean 483 ms — a measurement, not an accuracy claim |
 | Threshold calibration | `pnpm calibrate` measures once and sweeps thresholds; live run reports agreement ranges (defaults are inside them), not calibrated operating points |
-| Benchmark with/without Jev | executed both tiers against real model runs (OpenCode Go, `deepseek-v4.1-flash`, 10 runs/variant): mock Jev ≈0 overhead, live Jev +4.6 s/turn for 3 decisions, narrowing breaks prompt-cache reuse — see `docs/benchmark.md` |
+| Benchmark with/without Jev | executed both tiers plus a use case with video (OpenCode Go, `deepseek-v4.1-flash`, 10 runs/variant): mock Jev ≈0 overhead; live Jev +4.6 s/turn for 3 decisions; baseline destroyed the audit trail in 4/10 runs while live Jev denied every attempt — see `docs/benchmark.md` |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
 
 ## Repository layout

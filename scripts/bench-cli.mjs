@@ -34,7 +34,7 @@
 
 import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -82,6 +82,27 @@ function run(command, args, options = {}) {
 }
 
 const dsh = (args, options) => run(dshBin, args, options)
+
+/**
+ * BENCH_LOCAL_PACKS=<dir>: overlay freshly packed tarballs on the profile so
+ * the benchmark measures the working tree, not the published registry version.
+ * Registry installs stay the normal path; this is a development override.
+ */
+function overlayLocalPacks(profileDir) {
+  const packsDir = process.env.BENCH_LOCAL_PACKS
+  if (packsDir === undefined) return
+  for (const [pkg, prefix] of [['jev-core', 'buberlo-jev-core-'], ['dsh-jev', 'buberlo-dsh-jev-']]) {
+    const tarball = readdirSync(packsDir).find(name => name.startsWith(prefix) && name.endsWith('.tgz'))
+    if (tarball === undefined) throw new Error(`BENCH_LOCAL_PACKS: no ${prefix}*.tgz in ${packsDir}`)
+    const target = join(profileDir, 'node_modules', '@buberlo', pkg)
+    rmSync(target, { recursive: true, force: true })
+    mkdirSync(target, { recursive: true })
+    const extracted = spawnSync('tar', ['-xzf', join(packsDir, tarball), '-C', target, '--strip-components=1'], { encoding: 'utf8' })
+    if (extracted.status !== 0) throw new Error(`overlay failed for ${pkg}: ${extracted.stderr}`)
+  }
+  console.log(`overlay: local packs from ${packsDir} installed over the profile`)
+}
+
 
 function writePatch(name, body) {
   const path = join(root, 'bench', name)
@@ -166,7 +187,12 @@ const livePatch = typesafeKey === undefined ? undefined : writePatch('jev-live.p
 
 // Profiles from the same template.
 for (const profile of ['bench-base', 'bench-jev']) {
-  const composed = dsh(['--profile', profile, '--from-default-profile', 'headless', '--dump-config'], { stdio: 'ignore' })
+  // Create from the shipped headless template once; reuse on later runs.
+  const exists = existsSync(join(home, 'profiles', profile, 'package.json'))
+  const args = exists
+    ? ['--profile', profile, '--dump-config']
+    : ['--profile', profile, '--from-default-profile', 'headless', '--dump-config']
+  const composed = dsh(args, { stdio: 'ignore' })
   if (composed.status !== 0) throw new Error(`profile ${profile} did not compose`)
 }
 const add = dsh(['plugin', '--profile', 'bench-jev', 'add', '@buberlo/dsh-jev'])
@@ -174,6 +200,7 @@ if (add.status !== 0) {
   console.error(add.stdout, add.stderr)
   throw new Error('dsh plugin add @buberlo/dsh-jev failed')
 }
+overlayLocalPacks(join(home, 'profiles', 'bench-jev'))
 
 function runVariant(label, profile, extraPatches) {
   const measurements = []

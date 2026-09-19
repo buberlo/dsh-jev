@@ -13,3 +13,4 @@ tmp/
 packages/dsh-jev/bench/results/
 bench/*.patch.yml
 /bench/results/
+/bench/usecase/

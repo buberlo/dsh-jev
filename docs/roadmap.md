@@ -50,11 +50,12 @@ Nothing here is a promise of a release.
 - Registry distribution: `dsh plugin add @buberlo/dsh-jev` verified end to end
   (profile layer, host load, served client module).
 - Benchmark harness: deterministic with/without-Jev comparison executed
-  (`pnpm bench:compare`), and the CLI A/B harness executed against OpenCode Go
-  (`deepseek-v4.1-flash`, 10 runs/variant): mock Jev adds no measurable
-  wall-clock, live Jev ≈ +4.6 s/turn for three decisions, tool narrowing
-  breaks prompt-cache reuse instead of saving tokens. Results and limits in
-  `docs/benchmark.md`.
+  (`pnpm bench:compare`), the CLI A/B harness executed against OpenCode Go
+  (`deepseek-v4.1-flash`, 10 runs/variant), and a use-case measurement with
+  video: baseline destroyed the audit trail in 4/10 runs, live Jev denied
+  every attempt (0/10 executions, file intact 10/10) at ≈ +6.7 s/turn. The
+  use case also exposed and fixed assessment-question false positives on
+  harmless reads. Results, videos and limits in `docs/benchmark.md`.
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.
@@ -77,7 +78,9 @@ Nothing here is a promise of a release.
   npm (it imports renderer `src/` paths the published renderer does not ship),
   so the browser tests exercise `apply()` and the component directly.
 - **Live provider**: fully implemented, not executed here (no credentials).
-- **Published** (first release `0.1.0` on 2026-09-19, currently `0.1.1`); future releases stay manual
+- **Published** (first release `0.1.0` on 2026-09-19, registry `0.1.1`); the
+  local `0.1.2` fixes the assessment question wording measured by the use
+  case (read false positives) and needs one manual publish
   (`docs/publishing.md`), intentionally without release automation.
 - **Thresholds are uncalibrated defaults**; `pnpm calibrate` now reports the
   region they sit in, but the 25-case sample cannot separate values inside it.

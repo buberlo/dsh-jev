@@ -3,7 +3,7 @@
 There is **no** automatic release, publish, or deployment workflow in this
 repository, and adding one is out of scope. Publishing is a manual step.
 
-**Status: both packages are published; current version `0.1.1` (2026-09-19). `0.1.0` was the first release; `0.1.1` adds the package READMEs.** The registry
+**Status: registry version is `0.1.1` (2026-09-19); the local `0.1.2` (assessment question fix found by the use-case benchmark) is built, packed and verified, and awaits one manual publish.** `0.1.0` was the first release; `0.1.1` added the package READMEs. The registry
 install path is verified: `dsh plugin add @buberlo/dsh-jev` composed the bundle
 layer, the host plugin loaded, and a running web app served
 `@buberlo/dsh-jev/client.js`. The steps below are the manual process for the
