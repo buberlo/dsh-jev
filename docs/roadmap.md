@@ -50,8 +50,11 @@ Nothing here is a promise of a release.
 - Registry distribution: `dsh plugin add @buberlo/dsh-jev` verified end to end
   (profile layer, host load, served client module).
 - Benchmark harness: deterministic with/without-Jev comparison executed
-  (`pnpm bench:compare`) and a CLI A/B harness built; measured results and
-  limits in `docs/benchmark.md`.
+  (`pnpm bench:compare`), and the CLI A/B harness executed against OpenCode Go
+  (`deepseek-v4.1-flash`, 10 runs/variant): mock Jev adds no measurable
+  wall-clock, live Jev ≈ +4.6 s/turn for three decisions, tool narrowing
+  breaks prompt-cache reuse instead of saving tokens. Results and limits in
+  `docs/benchmark.md`.
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.
@@ -82,9 +85,6 @@ Nothing here is a promise of a release.
 
 ## Planned (not implemented)
 
-- Real-model CLI benchmark run: the harness is ready, but the only available
-  gateway key is unusable from an external harness (403 client-locked free
-  tier, 402 insufficient funds). Needs a funded OpenAI-compatible gateway.
 - Labeled calibration corpus with enough cases per consequence class to narrow
   the reported threshold ranges.
 - Per-category pre-selection with a documented second-stage ranking for very

@@ -53,45 +53,61 @@ Reading:
 
 Raw artifacts: `packages/dsh-jev/bench/results/` (gitignored).
 
-## CLI tier: built and mechanically verified, blocked at the gateway
+## Executed: CLI tier (real `dsh`, real model)
 
-`node scripts/bench-cli.mjs` creates both profiles, applies one identical LLM
-route patch (a hand-declared `openai-completions` gateway for
-`@deepseek-ai/dsh-llm-pi-ai`), adds the plugin to the Jev profile, runs N
-recorded turns per variant and writes NDJSON/stderr recordings.
+`node scripts/bench-cli.mjs` with the OpenCode Go tier
+(`https://opencode.ai/zen/go/v1`, `deepseek-v4.1-flash`), 10 runs per variant,
+macOS arm64, 2026-09-19. Every variant used the identical profile composition
+and LLM route; only the Jev row and its mode differ. The gateway requires
+`x-opencode-session`, which the harness injects as a fresh per-run UUID (plus
+an identifying user agent) through the pi-ai provider profile's `headers`
+field — DSH itself does not send it on every adapter path.
 
-A full dry-run was executed; the harness composed both profiles and reached
-the model call. It cannot produce results in this environment because the only
-available key is the author's opencode-go key, which is **not usable from an
-external harness** (measured 2026-09-19):
+| Variant | ok | Turn wall-clock mean / p50 (min–max) | Input tokens | Output | Cached read | Tool calls |
+|---|---|---|---|---|---|---|
+| A base (no Jev) | 10/10 | 3,340 / 3,286 ms (3,189–3,680) | 82,728 | 987 | 80,640 | 10 |
+| B Jev mock + shadow | 10/10 | 3,347 / 3,367 ms (3,087–3,570) | 82,677 | 1,012 | 80,640 | 10 |
+| C Jev mock + enforce (selection narrows to `read`) | 10/10 | 3,420 / 3,405 ms (2,850–4,421) | 98,108 | 1,127 | **0** | 10 |
+| D Jev live + shadow | 10/10 | 7,895 / 8,169 ms (6,917–9,246) | 82,763 | 1,011 | 80,640 | 10 |
 
-| Request | Result |
-|---|---|
-| `GET https://opencode.ai/zen/v1/models` with the key | 200 — key valid, lists `deepseek-v4.1-flash` |
-| `POST …/chat/completions` with `deepseek-v4.1-flash` | **402** `Upstream request failed: Insufficient account funds` |
-| `POST …/chat/completions` with a `-free` model | **403** `FreeTierError: OpenCode's free tier can only be used from within OpenCode` |
+Reading, honestly:
 
-The recorded run artifacts therefore contain the gateway's 402 as the failure
-reason — a concrete blocker, not a silent skip.
+- **Mock Jev is free in the CLI too** (+0.2 %, inside the spread). The
+  integration itself does not slow the task down.
+- **Live Jev in shadow costs about +4.6 s per turn** (≈2.4×) for two
+  selections and one assessment — ≈1.5 s per real decision. Shadow changes no
+  behavior, so this is pure overhead: the price of real semantics, not a
+  speed-up.
+- **Narrowing the tool surface does not reduce tokens by itself, and it can
+  cost more.** The enforce run shows cached reads dropping from 80,640 to 0:
+  the smaller tool set changes the request prefix, so the gateway's prompt
+  cache misses and the previously cached prefix is billed and processed as
+  fresh input (98,108 vs 82,728 input tokens). Wall-clock stayed within noise
+  (+2.4 % mean, overlapping ranges). The schema saving measured in the
+  deterministic tier (41 % of tool-schema bytes) is real but small next to a
+  cached conversation prefix.
+- **No avoided work in this task**: every run performed exactly one tool call.
+  Avoided executions show up in the hold/deny path, measured in the
+  deterministic tier (1 → 0 executions).
 
-### Running it for real
+Bottom line: with Jev in mock mode, DSH is as fast as without it; with live
+Jev, the decision layer costs ~1.5 s per decision and is not a latency
+optimization. Its value is the decisions themselves — gating, narrowing,
+routing — and those only pay off when they replace work that is more
+expensive than the decision (a destructive call, a long failed run, a wrong
+model).
 
-Any working OpenAI-compatible gateway unblocks the tier:
+### Reproduce
 
 ```sh
 DSH_BIN=/path/to/dsh \
-BENCH_BASE_URL=https://gateway.example/v1 \
-BENCH_MODEL=<model-id> \
-BENCH_API_KEY=<key> \
-BENCH_RUNS=5 \
-TYPESAFE_API_KEY=<key> \
-node scripts/bench-cli.mjs
+BENCH_BASE_URL=https://opencode.ai/zen/go/v1 BENCH_MODEL=deepseek-v4.1-flash \
+BENCH_API_KEY=… BENCH_SESSION_HEADER=x-opencode-session BENCH_RUNS=10 \
+TYPESAFE_API_KEY=… node scripts/bench-cli.mjs
 ```
 
-`apiKeyEnv` references an environment variable in the generated profile patch;
-the key itself is passed to the child process only and never written to a file.
-Artifacts land in `bench/results/<variant>/run-*.jsonl` and
-`cli-<timestamp>.json`.
+Artifacts (NDJSON + stderr per run, summary JSON) land under
+`bench/results/` and are gitignored.
 
 ## Limits and non-claims
 
