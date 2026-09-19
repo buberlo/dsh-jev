@@ -1,5 +1,5 @@
 node_modules/
-lib/
+packages/*/lib/
 coverage/
 dist/
 *.tsbuildinfo
