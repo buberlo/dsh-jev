@@ -34,6 +34,28 @@
 The core imports nothing from DSH. `examples/standalone-game` proves that by
 importing only `@buberlo/jev-core`.
 
+## Host and browser halves
+
+The plugin package ships two faces:
+
+- **Host** (default export): the `ctx.jev` service and its adapters, plus the
+  `jev` settings namespace registered through `ctx.settings.installSection`.
+  Committed settings writes reconfigure the running service (mode and feature
+  toggles) without a reload; the composed `cordis.yml` entry is the base layer.
+- **Browser** (`./client`, `dsh.client.platform: web`): the bundle's
+  configuration page, registered into `plugins.bundle.config` keyed by the
+  package name and rendered on the bundle's Plugins page. It reads and writes
+  through `ctx.settingsScope`, which fences every write with the revision it
+  read.
+
+Two upstream constraints shape the client half. Cross-plugin value imports are
+forbidden (bundle-purity rule), so the page imports other client packages
+type-only and renders its own chrome. And upstream publishes no tsdown preset
+for out-of-tree client plugins, so `tsdown.config.ts` reproduces the artifact
+contract directly: a CJS closure factory for
+`window.__ModuleLoader__.load({ id, factory })` with `react` resolved through
+the injected require.
+
 ## Vertical slice
 
 ```

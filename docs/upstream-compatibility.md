@@ -80,6 +80,42 @@ The file references are from the cloned DSH source at the commit above.
 - `agent/disposed` is the teardown notification
   (`packages/core/agent/src/runtime-types.ts:270`).
 
+### Settings and the web client
+
+- Host settings: `ctx.settings.installSection(owner, ns, schema, entry, hooks)`
+  registers a namespace whose resolved value layers over the plugin's composed
+  entry; `setSource`/`onChange` fire on attach, detach, and every committed
+  change (`packages/settings/settings/src/index.ts:472-496`). Writes go through
+  `settings.update(ns, patch)` / `replace` / `mutate`, and
+  `describe({ redactSecrets: true })` strips `role('secret')` fields
+  (`packages/settings/settings/README.md`).
+- Client settings: `ctx.settingsScope.bind({ namespace })` returns a
+  revision-fenced `SettingsScope` with `getSnapshot`, `subscribe`, `set`,
+  `unset`, and `mutate`
+  (`@deepseek-ai/dsh-client-ui-settings/client`).
+- Plugins page slots (`@deepseek-ai/dsh-client-ui-plugin-manager/client`):
+  `plugins.bundle.config` is keyed by the bundle package name and rendered on
+  the bundle's page with `{ view: 'page' }`; `plugins.item` is a list occupied
+  by the in-box host-plane pages; `plugins.row.config` is keyed by
+  `<package>#<row id>`.
+- Client artifacts: the module system serves each enabled Loader row's built
+  `./client` export as a CJS closure factory for
+  `window.__ModuleLoader__.load({ id, factory })`; `react` and
+  `react/jsx-runtime` resolve through the injected require (baseline
+  `PLATFORM_MODULES`), and cross-plugin value imports are rejected by the
+  bundle-purity gate (`packages/client/tsdown.client.ts`,
+  `packages/client/web/src/platform.ts`). Upstream publishes **no** tsdown
+  preset for out-of-tree client plugins, so this package reproduces the
+  artifact contract in its own `tsdown.config.ts` (verified by the packaging
+  test evaluating the artifact).
+- **Limitation found**: the published
+  `@deepseek-ai/dsh-client-test-runtime@0.1.6-alpha.2` imports
+  `@deepseek-ai/dsh-client-ui-renderer/src/client/bind.ts` and
+  `.../scoped-slots.tsx`, but the published renderer ships only `lib/` (its
+  `files` list excludes `src`). The slot test bench therefore cannot load
+  from npm at this version; the browser tests exercise `apply()` against a
+  recording fake context and render the real component directly instead.
+
 ### Approval and skills
 
 - `ask` runs only after the approval service returns `allowed-once` and fails

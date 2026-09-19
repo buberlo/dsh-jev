@@ -34,7 +34,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
-| Tests | 105 (79 core + 26 DSH integration) · 15 mock evaluation fixtures |
+| Tests | 114 (79 core + 35 DSH integration) · 15 mock evaluation fixtures |
 | Live API | implemented, requires an explicit key; not part of any default |
 | License | MIT |
 
@@ -195,6 +195,20 @@ Live API — two explicit settings, never implicit:
     apiKey: !!js process.env.TYPESAFE_API_KEY
 ```
 
+### Configure it from the web client
+
+In a web/desktop profile the bundle ships a configuration page: open the
+**Plugins** page and this bundle's own page to find the Jev card. It explains
+what Jev does in the loop and edits the safe subset live:
+
+- mode (`off` / `shadow` / `enforce`) — applied immediately, no restart;
+- the five feature toggles (selection, assessment, loop guard, skills, model
+  routing).
+
+Provider, model, and API key stay in `cordis.yml` (the key is a secret and is
+never displayed). Headless profiles have no web client and simply ignore this
+half; the plugin runs identically from its composed configuration.
+
 <details>
 <summary>All configuration fields and their defaults</summary>
 
@@ -243,12 +257,13 @@ Live API — two explicit settings, never implicit:
 | Area | Status |
 |---|---|
 | `@buberlo/jev-core` | implemented, 79 unit tests |
-| `@buberlo/dsh-jev` | implemented, 26 integration tests (real ToolRuntime, real agent loop, real approval service) |
+| `@buberlo/dsh-jev` | implemented, 35 integration tests (real ToolRuntime, real agent loop, real approval service, real settings provider) |
 | Dynamic tool selection | tested incl. pre-existing denials and parallel sessions |
 | Call assessment + approvals | tested incl. changed arguments and fail-closed paths |
 | Loop guard | tested (per-agent isolation, shadow vs enforce) |
 | Model routing | tested with verified-availability fallback |
 | Skill routing + vendored TypeSafe skill | tested against the real filesystem provider |
+| Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested |
 | Real `dsh` CLI profile/loader | verified (see `docs/upstream-compatibility.md`) |
 | Live TypeSafe API | implemented; **not executed here** (no credentials) |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
@@ -283,7 +298,7 @@ scripts/               verify.sh · packaging-test.mjs · run-evals.ts
 ```sh
 pnpm install          # workspace install
 pnpm build            # tsc for both packages
-pnpm test             # 105 tests
+pnpm test             # 114 tests
 pnpm evals            # 15 mock evaluation fixtures
 pnpm verify           # install → build → typecheck → tests → evals → examples → packaging
 ```

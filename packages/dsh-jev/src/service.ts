@@ -19,6 +19,7 @@ import {
   type ToolAssessment,
 } from '@buberlo/jev-core'
 import { Config as ConfigSchema, resolveSettings, type Config, type ResolvedSettings } from './config.js'
+import { installSettingsSection } from './settings-section.js'
 import { AgentState } from './state.js'
 import { installAssessmentAdapter } from './adapters/assessment.js'
 import { installPreStepAdapter } from './adapters/pre-step.js'
@@ -52,8 +53,9 @@ export class JevRuntime extends Service {
 
   static Config = ConfigSchema
 
-  readonly settings: ResolvedSettings
-  readonly core: JevCore
+  private settingsValue: ResolvedSettings
+  private coreValue: JevCore
+  private readonly entryConfig: Config
   readonly detector: LoopDetector
   readonly stats: JevStats = {
     selections: 0,
@@ -74,28 +76,12 @@ export class JevRuntime extends Service {
 
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'jev')
-    this.settings = resolveSettings(config)
-    this.core = createJevCore({
-      provider: createProvider(this.settings),
-      mode: this.settings.mode,
-      ...(this.settings.model === undefined ? {} : { model: this.settings.model }),
-      thresholds: this.settings.thresholds,
-      limits: {
-        budgetMs: this.settings.budgetMs,
-        maxConcurrent: this.settings.maxConcurrent,
-        maxStateChars: this.settings.maxStateChars,
-        maxArgumentChars: this.settings.maxArgumentChars,
-        maxCategories: this.settings.maxCategories,
-        maxCandidatesPerQuestion: this.settings.maxCandidatesPerQuestion,
-        maxSelectedTools: this.settings.maxSelectedTools,
-        maxSkills: this.settings.maxSkills,
-      },
-      onFailure: { toolAssessment: this.settings.assessment.onFailure },
-      ...(this.settings.redactKeys.length === 0 ? {} : { redactKeys: this.settings.redactKeys }),
-    })
+    this.entryConfig = config
+    this.settingsValue = resolveSettings(config)
+    this.coreValue = createCore(this.settingsValue)
     this.detector = new LoopDetector({
-      maxRepeats: this.settings.loopDetection.maxRepeats,
-      maxSubjects: this.settings.loopDetection.maxSubjects,
+      maxRepeats: this.settingsValue.loopDetection.maxRepeats,
+      maxSubjects: this.settingsValue.loopDetection.maxSubjects,
     })
 
     ctx.on('tools/change', () => {
@@ -113,6 +99,7 @@ export class JevRuntime extends Service {
     installAssessmentAdapter(ctx, this)
     installObservationAdapter(ctx, this)
     installModelAdapter(ctx, this)
+    installSettingsSection(ctx, this, this.entryConfig)
 
     this.log('info', 'loaded', {
       provider: this.settings.provider,
@@ -130,7 +117,41 @@ export class JevRuntime extends Service {
 
   /** Effective behavior mode. */
   get mode(): JevMode {
-    return this.settings.mode
+    return this.settingsValue.mode
+  }
+
+  /** Effective settings (replaced by {@link reconfigure}). */
+  get settings(): ResolvedSettings {
+    return this.settingsValue
+  }
+
+  /** The configured decision core (replaced by {@link reconfigure}). */
+  get core(): JevCore {
+    return this.coreValue
+  }
+
+  /**
+   * Adopt a new configuration, typically from a committed settings write.
+   * The old core is aborted, the provider and core are rebuilt, and every
+   * agent's tool-selection restriction is lifted so the next pre-step
+   * recomputes from the unrestricted catalog.
+   * @param config - the new resolved configuration source.
+   */
+  reconfigure(config: Config): void {
+    const next = resolveSettings(config)
+    this.coreValue.abortAll(new Error('dsh-jev reconfigured'))
+    this.settingsValue = next
+    this.coreValue = createCore(next)
+    for (const state of this.states.values()) state.liftSelection()
+    this.log('info', 'reconfigured', {
+      provider: next.provider,
+      mode: next.mode,
+      selection: next.selection.enabled,
+      assessment: next.assessment.enabled,
+    })
+    if (next.provider === 'live' && next.mode !== 'off') {
+      this.log('warn', 'provider "live" transmits task state to TypeSafe — this includes shadow mode (results are logged, not applied)')
+    }
   }
 
   /** Monotonic tool-catalog revision; advances on every registry change. */
@@ -191,6 +212,27 @@ export class JevRuntime extends Service {
     else if (level === 'debug') this.ctx.logger.debug(text, data ?? '')
     else this.ctx.logger.info(text, data ?? '')
   }
+}
+
+function createCore(settings: ResolvedSettings): JevCore {
+  return createJevCore({
+    provider: createProvider(settings),
+    mode: settings.mode,
+    ...(settings.model === undefined ? {} : { model: settings.model }),
+    thresholds: settings.thresholds,
+    limits: {
+      budgetMs: settings.budgetMs,
+      maxConcurrent: settings.maxConcurrent,
+      maxStateChars: settings.maxStateChars,
+      maxArgumentChars: settings.maxArgumentChars,
+      maxCategories: settings.maxCategories,
+      maxCandidatesPerQuestion: settings.maxCandidatesPerQuestion,
+      maxSelectedTools: settings.maxSelectedTools,
+      maxSkills: settings.maxSkills,
+    },
+    onFailure: { toolAssessment: settings.assessment.onFailure },
+    ...(settings.redactKeys.length === 0 ? {} : { redactKeys: settings.redactKeys }),
+  })
 }
 
 function createProvider(settings: ResolvedSettings): JevProvider {

@@ -34,6 +34,9 @@ Nothing here is a promise of a release.
 - Vendored TypeSafe agent skill (`.agents/skills/typesafe-ai`, pinned upstream
   commit + license) with real-provider discovery and routing tests, a
   configured routing-hint overlay, and de/en evaluation cases.
+- Web client configuration page for the bundle (`plugins.bundle.config`):
+  provider/mode/feature state plus immediate settings writes through the host
+  settings document, covered by host and browser tests.
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.
@@ -47,6 +50,13 @@ Nothing here is a promise of a release.
   documents as advisory; absence falls back rather than routing anyway.
 - **Skill routing**: injects a bounded hint only; automatic skill body loading
   is not attempted (the normal skill mechanism remains in charge).
+- **Web client page**: edits mode and feature toggles only; provider, model,
+  and API key stay in `cordis.yml` (the key is a secret). The page shows
+  configured state, not live counters.
+- **Client test runtime**: the published
+  `@deepseek-ai/dsh-client-test-runtime@0.1.6-alpha.2` cannot be loaded from
+  npm (it imports renderer `src/` paths the published renderer does not ship),
+  so the browser tests exercise `apply()` and the component directly.
 - **Live provider**: fully implemented, not executed here (no credentials).
 - **Packages are not published to npm**, and there is intentionally no release
   workflow; until then both tarballs must be profile dependencies.

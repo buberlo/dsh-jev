@@ -73,6 +73,6 @@ live mode ignores `answers`.
 pnpm verify
 ```
 
-runs, in order: frozen install, build, typecheck, both test suites (105 tests),
+runs, in order: frozen install, build, typecheck, both test suites (114 tests),
 mock evaluation (15/15), all four examples, and the packaging test (tarball
 install + real plugin load + consumer typecheck).

@@ -79,8 +79,14 @@ try {
   if (packedManifest.dsh?.bundle?.patch !== './cordis.patch.yml') {
     throw new Error('packed @buberlo/dsh-jev is missing the dsh.bundle.patch manifest entry')
   }
+  if (packedManifest.dsh?.client?.platform !== 'web') {
+    throw new Error('packed @buberlo/dsh-jev is missing the dsh.client.web declaration')
+  }
+  if (packedManifest.exports?.['./client']?.default !== './lib/client.js') {
+    throw new Error('packed @buberlo/dsh-jev is missing the ./client export')
+  }
   const packedFiles = run('tar', ['-tf', join(packs, dshTar)])
-  for (const required of ['package/lib/index.js', 'package/lib/types/index.d.ts', 'package/cordis.patch.yml']) {
+  for (const required of ['package/lib/index.js', 'package/lib/client.js', 'package/lib/types/client/index.d.ts', 'package/cordis.patch.yml']) {
     if (!packedFiles.includes(required)) throw new Error(`packed dsh-jev is missing ${required}`)
   }
   if (packedManifest.dependencies['@buberlo/jev-core'].includes('workspace:')) {
@@ -90,6 +96,7 @@ try {
   step('running the runtime smoke (real DSH services + installed plugin)')
   writeFileSync(join(consumer, 'smoke.mjs'), `
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { Context } from '@deepseek-ai/cordis'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -150,8 +157,20 @@ const fromPlugin = require.resolve('@deepseek-ai/cordis', { paths: [require.reso
 const fromConsumer = require.resolve('@deepseek-ai/cordis')
 assert.equal(fromPlugin, fromConsumer, 'the plugin must use the host Cordis instance')
 
+// 4. The web-client artifact honors the loader's closure-factory contract.
+const clientCode = readFileSync(require.resolve('@buberlo/dsh-jev/client'), 'utf8')
+let loaded
+const fakeWindow = { __ModuleLoader__: { load: (spec) => { loaded = spec } } }
+new Function('window', clientCode)(fakeWindow)
+assert.equal(loaded.id, '@buberlo/dsh-jev')
+const reactStub = { useState: (value) => [typeof value === 'function' ? value() : value, () => {}] }
+const jsxStub = { jsx: () => null, jsxs: () => null, Fragment: {} }
+const clientExports = loaded.factory((id) => id === 'react' ? reactStub : jsxStub)
+assert.equal(typeof clientExports.apply, 'function', 'client artifact must export apply')
+assert.deepEqual([...clientExports.inject].sort(), ['locale', 'remote', 'settingsScope', 'slots'])
+
 await ctx.fiber.dispose()
-console.log('smoke: OK (standalone core, real plugin load, fail-closed enforcement, single cordis)')
+console.log('smoke: OK (standalone core, real plugin load, fail-closed enforcement, single cordis, client artifact)')
 `)
   console.log(run('node', ['smoke.mjs'], { cwd: consumer }).trim())
 

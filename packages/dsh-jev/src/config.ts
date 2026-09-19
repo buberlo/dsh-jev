@@ -142,7 +142,7 @@ export const Config: z<Config> = z.object({
   provider: z.union(['mock', 'live'] as const).default('mock'),
   mode: z.union(['off', 'shadow', 'enforce'] as const).default('shadow'),
   model: z.string(),
-  apiKey: z.string(),
+  apiKey: z.string().role('secret'),
   baseURL: z.string(),
   timeoutMs: z.natural().default(5000),
   budgetMs: z.natural().default(8000),

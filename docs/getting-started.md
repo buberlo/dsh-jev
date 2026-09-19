@@ -93,7 +93,7 @@ pnpm evals       # 15 evaluation fixtures, mock mode
   expected selection/assessment/skill outcome.
 
 Neither proves how well real Jev performs on your data. That is what the live
-evaluation is for (step 8), and it is deliberately not part of `pnpm verify`.
+evaluation is for (step 9), and it is deliberately not part of `pnpm verify`.
 
 ## 5. Use the core without DSH
 
@@ -167,7 +167,33 @@ What changes in enforce mode:
 
 Failures still fall back or ask — never allow.
 
-## 8. Go live (optional)
+## 8. Tune it from the web client (web profiles)
+
+A web or desktop profile mounts the plugin's configuration page on the
+**Plugins** page, under this bundle. The card explains the integration and
+lets you change, live and without a restart:
+
+- **mode** — `off`, `shadow`, or `enforce`; the hint under the buttons says
+  exactly what changes;
+- **feature toggles** — selection, assessment, loop guard, skills, model
+  routing.
+
+What you see:
+
+- the current **provider** (the card cannot edit it — the API key is a secret
+  and stays in `cordis.yml`);
+- each toggle with its settings field path, so the value you change is
+  traceable back to the configuration.
+
+Writes go into the host settings document (the same place a user-edited
+`settings.yaml` would), and the running service reconfigures on every
+committed change. If a write is rejected, the card shows the schema error and
+the last good configuration stays active.
+
+Headless profiles have no web client; skip this step — the plugin behaves the
+same from its composed entry.
+
+## 9. Go live (optional)
 
 ```yaml
 - id: jev
@@ -195,7 +221,7 @@ Without a key this prints `live evaluation NOT EXECUTED` — a non-run is never
 reported as a pass. See `docs/evaluation.md` for what the numbers mean (and do
 not mean).
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
