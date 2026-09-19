@@ -45,6 +45,7 @@ with the answers. The generative model still does planning, prose, and code.
 | `@buberlo/jev-core`: providers, validation, policies, selection, assessment, routing, loop detector | implemented, unit-tested (77 tests) |
 | `@buberlo/dsh-jev`: plugin, service, adapters | implemented, integration-tested (23 tests) |
 | Real DSH runtime: ToolRuntime pipeline + full agent loop + approval service | tested |
+| TypeSafe agent skill vendored in `.agents/skills/` (pinned, MIT) | installed; discovery + routing tested with the real filesystem provider |
 | Real `dsh` CLI profile boot with this bundle | verified (see `docs/upstream-compatibility.md`) |
 | Live TypeSafe API | implemented, **not executed** (no credentials in this environment); mock tests prove program logic only |
 | Code-mode (PTC) execution path binding | tested via nested sub-dispatch; full PTC runtime not mounted |
@@ -189,6 +190,7 @@ packages/dsh-jev/      real Cordis/DSH plugin (bundle)
 examples/              coding, ops-readonly, standalone-game, DSH runtime
 tests/                 (integration tests live with the plugin package)
 evals/fixtures/        versioned de/en evaluation dataset
+.agents/skills/        vendored TypeSafe agent skill (pinned upstream commit)
 docs/                  architecture, upstream compatibility, policy, evaluation, roadmap
 scripts/               verify.sh, packaging-test.mjs, run-evals.ts
 ```
@@ -200,6 +202,7 @@ scripts/               verify.sh, packaging-test.mjs, run-evals.ts
 - `docs/policy.md` — questions, thresholds (uncalibrated), decisions, failures
 - `docs/evaluation.md` — mock vs live, fixture format, reporting
 - `docs/roadmap.md` — implemented, limited, planned
+- `docs/skills.md` — the vendored TypeSafe skill, discovery, and routing
 - `AGENTS.md` — commands and permanent project rules
 
 ## License
