@@ -1,0 +1,5 @@
+# dsh-jev bundle layer. Adding this bundle to a profile inserts the plugin row.
+# Defaults are mock + shadow: no network traffic, no behavior change.
+- insert:
+    - id: jev
+      name: '@buberlo/dsh-jev'

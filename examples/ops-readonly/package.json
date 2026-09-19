@@ -1,0 +1,17 @@
+{
+  "name": "@buberlo/example-ops-readonly",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only ops router example (offline, synthetic, no customer systems).",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@buberlo/jev-core": "workspace:^"
+  },
+  "devDependencies": {
+    "tsx": "4.23.13",
+    "typescript": "6.0.3"
+  }
+}

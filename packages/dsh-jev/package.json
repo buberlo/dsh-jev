@@ -1,0 +1,82 @@
+{
+  "name": "@buberlo/dsh-jev",
+  "version": "0.1.0",
+  "description": "Jev-powered decision layer plugin for DeepSeek Harness",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/types/**/*.d.ts",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepare": "tsc -p tsconfig.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@buberlo/jev-core": "workspace:^",
+    "@deepseek-ai/schemastery": "3.18.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-agent": "^0.1.6-alpha.2",
+    "@deepseek-ai/dsh-llm": "^0.1.6-alpha.2",
+    "@deepseek-ai/dsh-session": "^0.1.6-alpha.2",
+    "@deepseek-ai/dsh-skill": "^0.1.6-alpha.2",
+    "@deepseek-ai/dsh-tools": "^0.1.6-alpha.2",
+    "@deepseek-ai/dsh-user-approval": "^0.1.6-alpha.2"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-agent": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-agent-loop": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-agent-loop-testkit": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-llm": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-scope": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-session": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-session-projection": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-skill": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-system-prompt": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-tools": "0.1.6-alpha.2",
+    "@deepseek-ai/schemastery": "3.18.2",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11",
+    "@deepseek-ai/dsh-user-approval": "0.1.6-alpha.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buberlo/dsh-jev.git",
+    "directory": "packages/dsh-jev"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "jev",
+    "typesafe-ai",
+    "decision-layer"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

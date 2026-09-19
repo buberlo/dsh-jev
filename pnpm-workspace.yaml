@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - examples/*
+minimumReleaseAgeExclude:
+  - '@types/node@26.6.2'
+allowBuilds:
+  esbuild: true

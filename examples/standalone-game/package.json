@@ -1,0 +1,17 @@
+{
+  "name": "@buberlo/example-standalone-game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone game example importing only @buberlo/jev-core.",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@buberlo/jev-core": "workspace:^"
+  },
+  "devDependencies": {
+    "tsx": "4.23.13",
+    "typescript": "6.0.3"
+  }
+}

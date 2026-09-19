@@ -1,0 +1,50 @@
+{
+  "name": "@buberlo/jev-core",
+  "version": "0.1.0",
+  "description": "Harness-independent TypeSafe Jev decision core: typed questions, providers, validation, policies and routing.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepare": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buberlo/dsh-jev.git",
+    "directory": "packages/jev-core"
+  },
+  "keywords": [
+    "jev",
+    "typesafe-ai",
+    "decision-layer"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

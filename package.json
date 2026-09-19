@@ -1,0 +1,36 @@
+{
+  "name": "dsh-jev-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Jev-powered decision layer for DeepSeek Harness",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buberlo/dsh-jev.git"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "packageManager": "pnpm@12.4.2",
+  "scripts": {
+    "build": "pnpm -r --sort run build",
+    "typecheck": "pnpm -r --sort run typecheck",
+    "test": "pnpm -r --sort run test",
+    "test:packaging": "node scripts/packaging-test.mjs",
+    "example:coding": "pnpm --filter @buberlo/example-coding start",
+    "example:ops": "pnpm --filter @buberlo/example-ops-readonly start",
+    "example:game": "pnpm --filter @buberlo/example-standalone-game start",
+    "example:dsh": "pnpm --filter @buberlo/example-coding start:dsh",
+    "evals": "tsx scripts/run-evals.ts",
+    "verify": "bash scripts/verify.sh"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "tsx": "4.23.13",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11",
+    "@buberlo/jev-core": "workspace:^",
+    "@buberlo/dsh-jev": "workspace:^"
+  }
+}

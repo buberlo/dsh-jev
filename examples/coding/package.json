@@ -1,0 +1,25 @@
+{
+  "name": "@buberlo/example-coding",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Coding-assistant example: Jev tool selection and call assessment (offline, synthetic).",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "start:dsh": "tsx src/dsh-runtime.ts"
+  },
+  "dependencies": {
+    "@buberlo/jev-core": "workspace:^"
+  },
+  "devDependencies": {
+    "@buberlo/dsh-jev": "workspace:^",
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-scope": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-system-prompt": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-tools": "0.1.6-alpha.2",
+    "tsx": "4.23.13",
+    "typescript": "6.0.3",
+    "@deepseek-ai/dsh-agent": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-llm": "0.1.6-alpha.2"
+  }
+}
