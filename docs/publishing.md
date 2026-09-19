@@ -3,7 +3,7 @@
 There is **no** automatic release, publish, or deployment workflow in this
 repository, and adding one is out of scope. Publishing is a manual step.
 
-**Status: both packages are published at `0.1.0` (2026-09-19).** The registry
+**Status: both packages are published; current version `0.1.1` (2026-09-19). `0.1.0` was the first release; `0.1.1` adds the package READMEs.** The registry
 install path is verified: `dsh plugin add @buberlo/dsh-jev` composed the bundle
 layer, the host plugin loaded, and a running web app served
 `@buberlo/dsh-jev/client.js`. The steps below are the manual process for the
@@ -52,5 +52,5 @@ dsh plugin --profile demo add @buberlo/dsh-jev
 
 - Simplify the README install section to the single-package form.
 - Record the published versions in `docs/upstream-compatibility.md`.
-- Tag the release commit manually (`git tag -a v0.1.0 -m ...`); tags are not
+- Tag the release commit manually (`git tag -a v0.1.1 -m ...`); tags are not
   workflows.

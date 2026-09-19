@@ -130,7 +130,7 @@ Building from a checkout instead (unreleased changes):
 ```sh
 pnpm build
 pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-dsh plugin --profile demo add ./packs/buberlo-dsh-jev-0.1.0.tgz
+dsh plugin --profile demo add ./packs/buberlo-dsh-jev-0.1.1.tgz
 ```
 
 You should see a `# == @buberlo/dsh-jev` layer with one `jev` row. The plugin

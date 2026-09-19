@@ -31,7 +31,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | | |
 |---|---|
 | Packages | `@buberlo/jev-core` (harness-independent) · `@buberlo/dsh-jev` (DSH plugin/bundle) |
-| npm | both published at `0.1.0` (2026-09-19); registry install verified with `dsh plugin add` |
+| npm | both published at `0.1.1` (2026-09-19); registry install verified with `dsh plugin add` |
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
@@ -153,7 +153,7 @@ core still resolves transitively:
 
 ```sh
 pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.0.tgz
+dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.1.tgz
 ```
 
 The bundle inserts one row; configure it by overriding that row's `config`:

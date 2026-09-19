@@ -236,8 +236,8 @@ The served module also contains the `settings.jev` and
   `scoped-slots.tsx`) while the published renderer ships only `lib/`, so the
   slot bench cannot load from the registry. Browser tests exercise `apply()`
   and the component directly instead.
-- **Published**: `@buberlo/jev-core@0.1.0` and `@buberlo/dsh-jev@0.1.0`
-  (2026-09-19). Verified end to end from the registry: `dsh plugin add
+- **Published**: `@buberlo/jev-core` and `@buberlo/dsh-jev`; `0.1.0` was the first
+  release (2026-09-19), `0.1.1` adds the package READMEs. Verified end to end from the registry: `dsh plugin add
   @buberlo/dsh-jev` installed both packages transitively into a fresh profile,
   `--dump-config` composed the bundle layer, a headless boot loaded the host
   plugin, and a running web profile served `@buberlo/dsh-jev/client.js`.

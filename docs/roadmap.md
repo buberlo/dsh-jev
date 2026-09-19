@@ -71,7 +71,7 @@ Nothing here is a promise of a release.
   npm (it imports renderer `src/` paths the published renderer does not ship),
   so the browser tests exercise `apply()` and the component directly.
 - **Live provider**: fully implemented, not executed here (no credentials).
-- **Published at `0.1.0`** (2026-09-19); future releases stay manual
+- **Published** (first release `0.1.0` on 2026-09-19, currently `0.1.1`); future releases stay manual
   (`docs/publishing.md`), intentionally without release automation.
 - **Thresholds are uncalibrated defaults**; `pnpm calibrate` now reports the
   region they sit in, but the 25-case sample cannot separate values inside it.
