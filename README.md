@@ -272,6 +272,7 @@ half; the plugin runs identically from its composed configuration.
 | Published packages | registry install verified: profile layer composed, host plugin loaded, client module served by a running web app |
 | Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 25/25 fixture agreement, 0 errors, mean 483 ms — a measurement, not an accuracy claim |
 | Threshold calibration | `pnpm calibrate` measures once and sweeps thresholds; live run reports agreement ranges (defaults are inside them), not calibrated operating points |
+| Benchmark with/without Jev | deterministic harness comparison executed (mock ≈0 ms overhead, 41 % fewer tool-schema bytes, avoided executions; live +1.6 s/turn); CLI tier built, blocked by gateway funding — see `docs/benchmark.md` |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
 
 ## Repository layout
@@ -299,6 +300,7 @@ scripts/               verify.sh · packaging-test.mjs · run-evals.ts
 | [`docs/skills.md`](docs/skills.md) | the vendored TypeSafe skill and its routing |
 | [`docs/roadmap.md`](docs/roadmap.md) | honest status and limits |
 | [`docs/publishing.md`](docs/publishing.md) | manual publish runbook (no release automation) |
+| [`docs/benchmark.md`](docs/benchmark.md) | measured with/without-Jev comparison, method and limits |
 
 ## Development
 
@@ -307,6 +309,8 @@ pnpm install          # workspace install
 pnpm build            # tsc for both packages
 pnpm test             # 120 tests
 pnpm calibrate        # threshold sweep over the fixtures (mock; --live with a key)
+pnpm bench:compare    # with/without Jev: real loop, scripted model, no key needed
+pnpm bench:cli        # CLI A/B run harness (needs an OpenAI-compatible gateway)
 pnpm evals            # 15 mock evaluation fixtures
 pnpm verify           # install → build → typecheck → tests → evals → examples → packaging
 ```

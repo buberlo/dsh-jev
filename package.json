@@ -24,7 +24,9 @@
     "example:dsh": "pnpm --filter @buberlo/example-coding start:dsh",
     "evals": "tsx scripts/run-evals.ts",
     "verify": "bash scripts/verify.sh",
-    "calibrate": "tsx scripts/calibrate.ts"
+    "calibrate": "tsx scripts/calibrate.ts",
+    "bench:compare": "pnpm --filter @buberlo/dsh-jev exec tsx bench/compare.ts",
+    "bench:cli": "node scripts/bench-cli.mjs"
   },
   "devDependencies": {
     "@types/node": "26.6.2",

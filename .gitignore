@@ -10,3 +10,6 @@ dist/
 *.tgz
 .tmp/
 tmp/
+packages/dsh-jev/bench/results/
+bench/*.patch.yml
+/bench/results/

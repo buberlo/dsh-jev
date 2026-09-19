@@ -41,6 +41,8 @@ pnpm test               # vitest run per package (core 82, dsh-jev 38)
 pnpm test --filter ...  # see vitest docs; use pnpm --filter <pkg> test
 pnpm evals              # mock evaluation fixtures (offline, 25 cases)
 pnpm calibrate          # threshold sweep over the fixtures (mock; --live with a key)
+pnpm bench:compare      # deterministic with/without-Jev comparison (scripted model)
+pnpm bench:cli          # CLI A/B harness (needs BENCH_* gateway settings)
 pnpm example:coding     # offline example (synthetic)
 pnpm example:ops        # offline example (synthetic)
 pnpm example:game       # offline example (core only)
