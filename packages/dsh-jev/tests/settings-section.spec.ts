@@ -76,6 +76,22 @@ describe('jev settings section', () => {
     expect(ctx.jev.mode).toBe('shadow')
   })
 
+  it('switches to the live provider only with a key, and keeps the runtime consistent', async () => {
+    const ctx = await mount()
+    await expect(ctx.settings.update('jev', { provider: 'live' })).rejects.toThrow(/apiKey/)
+    await settle()
+    expect(ctx.jev.settings.provider).toBe('mock')
+
+    await ctx.settings.update('jev', { provider: 'live', apiKey: 'test-key-not-real' })
+    await settle()
+    expect(ctx.jev.settings.provider).toBe('live')
+    expect(ctx.jev.core.config.provider.kind).toBe('live')
+
+    await ctx.settings.update('jev', { provider: 'mock' })
+    await settle()
+    expect(ctx.jev.settings.provider).toBe('mock')
+  })
+
   it('keeps running when the settings provider is absent', async () => {
     const ctx = new Context()
     contexts.push(ctx)
@@ -83,5 +99,35 @@ describe('jev settings section', () => {
     await ctx.plugin(JevPlugin, { provider: 'mock', mode: 'shadow' })
     expect(ctx.jev.mode).toBe('shadow')
     expect(ctx.get('settings')).toBeUndefined()
+  })
+
+  it('aborts in-flight assessments when the configuration changes', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dsh-jev-reconfig-'))
+    dirs.push(dir)
+    const ctx = new Context()
+    contexts.push(ctx)
+    await mountAgentLoopTestDependencies(ctx)
+    await ctx.plugin(SettingsFile, { path: join(dir, 'settings.yaml'), watch: false })
+    await ctx.plugin(JevPlugin, {
+      provider: 'mock',
+      mode: 'shadow',
+      selection: { enabled: false },
+      assessment: { enabled: true },
+      mock: { delayMs: 5000 },
+    })
+
+    const started = ctx.jev.assess({
+      task: 'Task',
+      toolId: 'read_file',
+      arguments: { path: '/a' },
+      mode: 'shadow',
+    })
+    await settle()
+    expect(ctx.jev.core.activeRequests).toBe(1)
+
+    await ctx.settings.update('jev', { mode: 'off' })
+    const assessment = await started
+    expect(assessment.failure?.code).toBe('ABORTED')
+    expect(ctx.jev.core.activeRequests).toBe(0)
   })
 })

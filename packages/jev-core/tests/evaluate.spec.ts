@@ -116,4 +116,31 @@ describe('JevCore.evaluate', () => {
     expect(result.ok).toBe(false)
     expect(core.activeRequests).toBe(0)
   })
+
+  it('never exceeds maxConcurrent', async () => {
+    let active = 0
+    let peak = 0
+    const provider = {
+      kind: 'mock' as const,
+      async ask() {
+        active += 1
+        peak = Math.max(peak, active)
+        await new Promise(resolve => setTimeout(resolve, 20))
+        active -= 1
+        return {
+          model: 'test-model',
+          answers: { q: { type: 'noul' as const, noul: 0.5 } },
+          usage: { input_tokens: 0, output_tokens: 0 },
+        }
+      },
+    }
+    const core = createJevCore({ provider, mode: 'enforce', limits: { maxConcurrent: 1 } })
+    await Promise.all([
+      core.evaluate({ state: 'a', questions: { q: noul('Q?') } }),
+      core.evaluate({ state: 'b', questions: { q: noul('Q?') } }),
+      core.evaluate({ state: 'c', questions: { q: noul('Q?') } }),
+    ])
+    expect(peak).toBe(1)
+    expect(core.activeRequests).toBe(0)
+  })
 })

@@ -34,7 +34,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
-| Tests | 114 (79 core + 35 DSH integration) · 15 mock evaluation fixtures |
+| Tests | 120 (82 core + 38 DSH integration) · 15 evaluation fixtures |
 | Live API | implemented, requires an explicit key; not part of any default |
 | License | MIT |
 
@@ -140,8 +140,10 @@ Details and design notes: [`docs/use-cases.md`](docs/use-cases.md).
 
 ## Install into a DSH profile
 
-The npm packages are intentionally not published yet. Build tarballs from a
-checkout and install them into your profile:
+The npm packages are not published yet (`npm whoami` reports no authenticated
+user in the development environment; the exact manual steps and the decision
+why the core publishes first are in `docs/publishing.md`). Build tarballs from
+a checkout and install them into your profile:
 
 ```sh
 pnpm --filter @buberlo/jev-core pack --pack-destination ./packs
@@ -256,16 +258,16 @@ half; the plugin runs identically from its composed configuration.
 
 | Area | Status |
 |---|---|
-| `@buberlo/jev-core` | implemented, 79 unit tests |
-| `@buberlo/dsh-jev` | implemented, 35 integration tests (real ToolRuntime, real agent loop, real approval service, real settings provider) |
+| `@buberlo/jev-core` | implemented, 82 unit tests |
+| `@buberlo/dsh-jev` | implemented, 38 integration tests (real ToolRuntime, real agent loop, real approval service, real settings provider) |
 | Dynamic tool selection | tested incl. pre-existing denials and parallel sessions |
 | Call assessment + approvals | tested incl. changed arguments and fail-closed paths |
 | Loop guard | tested (per-agent isolation, shadow vs enforce) |
 | Model routing | tested with verified-availability fallback |
 | Skill routing + vendored TypeSafe skill | tested against the real filesystem provider |
-| Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested |
+| Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested; module served by a running web app |
 | Real `dsh` CLI profile/loader | verified (see `docs/upstream-compatibility.md`) |
-| Live TypeSafe API | implemented; **not executed here** (no credentials) |
+| Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 15/15 fixture agreement, 0 errors, mean 528 ms — a measurement, not an accuracy claim |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
 
 ## Repository layout
@@ -292,13 +294,14 @@ scripts/               verify.sh · packaging-test.mjs · run-evals.ts
 | [`docs/evaluation.md`](docs/evaluation.md) | mock vs live, dataset, reporting |
 | [`docs/skills.md`](docs/skills.md) | the vendored TypeSafe skill and its routing |
 | [`docs/roadmap.md`](docs/roadmap.md) | honest status and limits |
+| [`docs/publishing.md`](docs/publishing.md) | manual publish runbook (no release automation) |
 
 ## Development
 
 ```sh
 pnpm install          # workspace install
 pnpm build            # tsc for both packages
-pnpm test             # 114 tests
+pnpm test             # 120 tests
 pnpm evals            # 15 mock evaluation fixtures
 pnpm verify           # install → build → typecheck → tests → evals → examples → packaging
 ```

@@ -44,6 +44,8 @@ const styles = {
 export function JevCard(props: JevCardProps): ReactNode {
   const { t } = props
   const [mode, setMode] = useState(props.snapshot.mode)
+  const [provider, setProvider] = useState(props.snapshot.provider)
+  const [apiKey, setApiKey] = useState('')
   const [features, setFeatures] = useState<Record<string, boolean>>(() => Object.fromEntries(
     props.snapshot.features.map(feature => [feature.field, feature.enabled]),
   ))
@@ -76,6 +78,13 @@ export function JevCard(props: JevCardProps): ReactNode {
     )
   }
 
+  const saveKey = (): void => {
+    const value = apiKey.trim()
+    if (value.length === 0) return
+    persist('apiKey', value)
+    setApiKey('')
+  }
+
   return (
     <div style={styles.root}>
       <p style={styles.intro}>{t('intro')}</p>
@@ -83,8 +92,41 @@ export function JevCard(props: JevCardProps): ReactNode {
 
       <div style={styles.row}>
         <span style={styles.label}>{t('provider')}</span>
-        <span>{props.snapshot.provider === 'live' ? t('providerLive') : t('providerMock')}</span>
+        {(['mock', 'live'] as const).map(candidate => (
+          <button
+            key={candidate}
+            type="button"
+            disabled={disabled}
+            style={candidate === provider ? { ...styles.chip, ...styles.chipActive } : styles.chip}
+            onClick={() => {
+              setProvider(candidate)
+              persist('provider', candidate)
+            }}
+          >
+            {candidate === 'mock' ? 'mock' : 'live'}
+          </button>
+        ))}
       </div>
+      <p style={styles.hint}>{t(provider === 'live' ? 'providerHintLive' : 'providerHintMock')}</p>
+
+      {provider === 'live' ? (
+        <div style={styles.row}>
+          <span style={styles.label}>{t('apiKey')}</span>
+          <input
+            type="password"
+            value={apiKey}
+            disabled={disabled}
+            placeholder={t('apiKeyPlaceholder')}
+            autoComplete="off"
+            style={{ flex: '1 1 260px', padding: '4px 8px' }}
+            onChange={(event) => { setApiKey(event.target.value) }}
+          />
+          <button type="button" disabled={disabled || apiKey.trim().length === 0} style={styles.chip} onClick={saveKey}>
+            {t('setKey')}
+          </button>
+        </div>
+      ) : null}
+      {provider === 'live' ? <p style={styles.hint}>{t('apiKeyHint')}</p> : null}
 
       <div style={styles.row}>
         <span style={styles.label}>{t('mode')}</span>

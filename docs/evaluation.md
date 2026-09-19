@@ -61,6 +61,31 @@ in German and English:
 Each fixture carries an `answers` block for mock mode and an `expect` block;
 live mode ignores `answers`.
 
+## Recorded live run
+
+First live execution, **2026-09-19**, against `jev-1.13.0` (`jev-latest`
+alias), with the pinned SDK 0.6.0:
+
+```text
+cases: 15, pass: 15, fail: 0
+latency: mean 528.4 ms, p50 317.2 ms
+abstentions: 2, errors: 0, misdecisions (vs fixture expectation): 0
+```
+
+Reading this honestly: agreement with fixtures that were authored offline is a
+consistency measurement on 15 cases, not an accuracy, cost, or latency
+benchmark. Two cases are intentional abstentions (the "no suitable candidate"
+selection and the "no skill needed" routing), so they can never be counted as
+hits in the sense of a positive classification. The run itself exercised the
+whole live path: request construction, the SDK transport, and response
+validation at the system boundary.
+
+Re-run it yourself with your own key:
+
+```sh
+TYPESAFE_API_KEY=... pnpm evals -- --live
+```
+
 ## What is not claimed
 
 - No accuracy, savings, or latency comparison against any baseline.
@@ -73,6 +98,6 @@ live mode ignores `answers`.
 pnpm verify
 ```
 
-runs, in order: frozen install, build, typecheck, both test suites (114 tests),
+runs, in order: frozen install, build, typecheck, both test suites (120 tests),
 mock evaluation (15/15), all four examples, and the packaging test (tarball
 install + real plugin load + consumer typecheck).

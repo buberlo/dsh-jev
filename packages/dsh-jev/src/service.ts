@@ -132,16 +132,17 @@ export class JevRuntime extends Service {
 
   /**
    * Adopt a new configuration, typically from a committed settings write.
-   * The old core is aborted, the provider and core are rebuilt, and every
-   * agent's tool-selection restriction is lifted so the next pre-step
-   * recomputes from the unrestricted catalog.
+   * The new core is built first, so a configuration the runtime cannot honor
+   * (for example `provider: live` without any key) leaves the running state
+   * untouched and the error surfaces to the settings writer.
    * @param config - the new resolved configuration source.
    */
   reconfigure(config: Config): void {
     const next = resolveSettings(config)
+    const replacement = createCore(next)
     this.coreValue.abortAll(new Error('dsh-jev reconfigured'))
     this.settingsValue = next
-    this.coreValue = createCore(next)
+    this.coreValue = replacement
     for (const state of this.states.values()) state.liftSelection()
     this.log('info', 'reconfigured', {
       provider: next.provider,

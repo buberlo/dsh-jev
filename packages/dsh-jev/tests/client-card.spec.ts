@@ -132,6 +132,31 @@ describe('jev client card', () => {
     expect(set).toHaveBeenCalledWith('skills.enabled', true)
   })
 
+  it('switches the provider and writes a write-only API key', async () => {
+    const { scope, set } = fakeScope({ provider: 'mock', mode: 'shadow' })
+    const face = new JevCardController(scope).inject()
+    view = render(createElement(JevCard, {
+      view: 'page',
+      t: (key: keyof typeof en) => en[key],
+      ...face,
+    } as never))
+
+    const live = view.getByRole('button', { name: 'live' })
+    await act(async () => { live.click() })
+    expect(set).toHaveBeenCalledWith('provider', 'live')
+
+    const key = view.getByPlaceholderText('Paste a TypeSafe API key')
+    await act(async () => {
+      key.setAttribute('value', 'ts-test-key')
+      key.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const save = view.getByRole('button', { name: 'Save key' })
+    await act(async () => { save.click() })
+    expect(set).toHaveBeenCalledWith('apiKey', 'ts-test-key')
+    // The value never stays in the DOM after saving.
+    expect((view.getByPlaceholderText('Paste a TypeSafe API key') as HTMLInputElement).value).toBe('')
+  })
+
   it('renders the one-line summary for the bundle page', () => {
     const { scope } = fakeScope({ provider: 'mock', mode: 'shadow' })
     const face = new JevCardController(scope).inject()

@@ -36,7 +36,13 @@ Nothing here is a promise of a release.
   configured routing-hint overlay, and de/en evaluation cases.
 - Web client configuration page for the bundle (`plugins.bundle.config`):
   provider/mode/feature state plus immediate settings writes through the host
-  settings document, covered by host and browser tests.
+  settings document, covered by host and browser tests. A running `web`
+  profile serves the client module (verified end to end with the `dsh` CLI).
+- First live TypeSafe evaluation (2026-09-19, `jev-1.13.0`): 15/15 fixture
+  agreement, 0 errors, mean 528 ms — recorded as a measurement in
+  `docs/evaluation.md`.
+- Manual publish runbook (`docs/publishing.md`) and a test-only CI workflow
+  (`.github/workflows/verify.yml`); no release or deployment automation.
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.
@@ -50,9 +56,10 @@ Nothing here is a promise of a release.
   documents as advisory; absence falls back rather than routing anyway.
 - **Skill routing**: injects a bounded hint only; automatic skill body loading
   is not attempted (the normal skill mechanism remains in charge).
-- **Web client page**: edits mode and feature toggles only; provider, model,
-  and API key stay in `cordis.yml` (the key is a secret). The page shows
-  configured state, not live counters.
+- **Web client page**: edits mode, provider, the write-only API key, and
+  feature toggles; model and base URL stay in `cordis.yml`. It shows
+  configured state, not live counters (see the blocked Remote capability in
+  `docs/upstream-compatibility.md`).
 - **Client test runtime**: the published
   `@deepseek-ai/dsh-client-test-runtime@0.1.6-alpha.2` cannot be loaded from
   npm (it imports renderer `src/` paths the published renderer does not ship),

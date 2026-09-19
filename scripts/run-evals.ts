@@ -94,6 +94,8 @@ interface CaseResult {
   actual: string
   pass: boolean
   detail?: string
+  /** Actual model id reported by the provider for this case. */
+  model?: string
   latencyMs: number
 }
 
@@ -137,6 +139,7 @@ async function evaluateCase(core: JevCore, fixture: Fixture): Promise<CaseResult
       actual: `${plan.status} [${plan.selected.join(', ')}]`,
       pass: statusMatches && selectedMatches && restrictedOk,
       detail: plan.failure?.code,
+      ...(plan.diagnostics.model === undefined ? {} : { model: plan.diagnostics.model }),
       latencyMs: performance.now() - started,
     }
   }
@@ -158,6 +161,7 @@ async function evaluateCase(core: JevCore, fixture: Fixture): Promise<CaseResult
       actual,
       pass: result.status === fixture.expect.status && result.skill === fixture.expect.skill,
       detail: result.failure?.code,
+      ...(result.diagnostics.model === undefined ? {} : { model: result.diagnostics.model }),
       latencyMs: performance.now() - started,
     }
   }
@@ -175,6 +179,7 @@ async function evaluateCase(core: JevCore, fixture: Fixture): Promise<CaseResult
     actual: assessment.status,
     pass: assessment.status === fixture.expect.status,
     detail: assessment.failure?.code ?? assessment.decisions[0]?.rule,
+    ...(assessment.diagnostics.model === undefined ? {} : { model: assessment.diagnostics.model }),
     latencyMs: performance.now() - started,
   }
 }
@@ -222,7 +227,8 @@ async function main(): Promise<void> {
   const core = createJevCore({ provider, mode: 'enforce', limits: { budgetMs: 30000 } })
   const results: CaseResult[] = []
   for (const fixture of fixtures) results.push(await evaluateCase(core, fixture))
-  report(results, `live (model answered: ${provider.defaultModel}) — measures Jev behavior, no accuracy claims`)
+  const models = [...new Set(results.map(result => result.model).filter((model): model is string => model !== undefined))]
+  report(results, `live (models answered: ${models.join(', ') || provider.defaultModel}) — measures Jev behavior, no accuracy claims`)
   const abstentions = results.filter(result => result.actual.startsWith('abstained') || result.actual === 'none').length
   const errors = results.filter(result => result.actual === 'fallback' || result.detail?.includes('INVALID') === true).length
   console.log(`abstentions: ${abstentions}, errors: ${errors}, misdecisions (vs fixture expectation): ${results.filter(result => !result.pass).length}`)

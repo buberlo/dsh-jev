@@ -36,6 +36,16 @@ export function installSettingsSection(ctx: Context, runtime: JevRuntime, entry:
       onChange: () => {
         runtime.reconfigure(source())
       },
+      validate: (value) => {
+        // A schema-valid section can still be unusable: live without any key.
+        // Rejecting the write keeps the document and the runtime consistent.
+        if (value.provider === 'live' && (value.apiKey === undefined || value.apiKey.trim().length === 0)) {
+          const enabled = value.mode === 'enforce' || value.mode === 'shadow'
+          if (enabled) {
+            throw new Error('dsh-jev: provider "live" requires an apiKey — enter one in the card or keep provider "mock"')
+          }
+        }
+      },
     })
   })
 }

@@ -131,4 +131,37 @@ describe('assessToolCall', () => {
     const withRisk = await core.assessToolCall({ ...baseInput, includeRiskScore: true })
     expect(withRisk.values.risk).toEqual({ score: 1.4, confidence: 0.6 })
   })
+
+  it('bounds huge arguments and reports the truncation', async () => {
+    const provider = assessmentProvider({})
+    const core = createJevCore({ provider, mode: 'enforce', limits: { maxArgumentChars: 64 } })
+    const assessment = await core.assessToolCall({
+      ...baseInput,
+      arguments: { path: '/repo/x', blob: 'x'.repeat(5000) },
+    })
+    expect(assessment.diagnostics.argumentsTruncated).toBe(true)
+    const sent = JSON.stringify(provider.requests)
+    expect(sent).not.toContain('x'.repeat(200))
+    expect(sent).toContain('[truncated]')
+  })
+
+  it('handles non-JSON leaves in arguments without throwing', async () => {
+    const provider = assessmentProvider({})
+    const core = coreWith(provider, 'enforce')
+    const assessment = await core.assessToolCall({
+      ...baseInput,
+      arguments: {
+        when: new Date('2026-01-01T00:00:00Z'),
+        map: new Map([['a', 1]]),
+        big: 10n,
+        fn: () => 'nope',
+      },
+    })
+    expect(assessment.status).toBe('allow')
+    const sent = JSON.stringify(provider.requests)
+    expect(sent).not.toContain('2026-01-01')
+    // Unsupported leaves are rendered as bounded tags, never passed through raw.
+    expect(sent).toContain('[function]')
+    expect(sent).toContain('when')
+  })
 })

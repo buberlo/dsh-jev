@@ -188,6 +188,22 @@ Reproducible local proof (see also `scripts/packaging-test.mjs`):
    - Booting with valid config reaches the LLM credential/authentication stage,
      i.e. the tree (including this plugin) mounted.
 
+### Web client served proof (2026-09-19)
+
+A `web` profile was created from the shipped `@deepseek-ai/dsh-web-app` bundle,
+this repository's tarballs were placed in its dependency tree, and the bundle
+was added to `dsh.profile.bundles`. Booting `dsh --profile <name> --no-open`
+served the application, and the boot HTML listed
+`@buberlo/dsh-jev/client.js` among the client modules. Fetching the composed
+module bundle returned our module verbatim:
+
+```text
+window.__ModuleLoader__.load({ id: "@buberlo/dsh-jev", factory: (require) => { ... } })
+```
+
+The served module also contains the `settings.jev` and
+`plugins.bundle.config` strings, i.e. the page the card registers into.
+
 ## Demonstrated restrictions
 
 - **Not published**: `@buberlo/jev-core` and `@buberlo/dsh-jev` are not on npm.
@@ -202,7 +218,25 @@ Reproducible local proof (see also `scripts/packaging-test.mjs`):
   advisory and does not validate routing, so the adapter treats absence from
   the catalog as "not verified" and falls back to the existing model. A route
   is never invented.
-- **No live run**: without `TYPESAFE_API_KEY` the live path is explicitly
-  reported as *not executed*, never as passed.
+- **Live run recorded once** (2026-09-19, `jev-1.13.0`): 15/15 fixture
+  agreement, 0 errors, mean 528 ms. Reproducible with an explicit key; without
+  one the runner reports *not executed*, never a pass.
+- **Client live counters are blocked upstream at this version**: the web
+  client's Remote capability set is fixed by build-time value imports
+  (`packages/api/remotes/README.md`: "the capability set is fixed by explicit
+  build-time value imports; the Client does not discover the Host's active
+  Services or Remote definitions at runtime"), so an out-of-tree plugin cannot
+  add a `ctx.remote.<namespace>` status method. The card therefore shows
+  configured state; live decision outcomes are visible where they already
+  surface — in the session's tool results (`[jev] <rule>`).
+- **Published client test runtime unusable from npm**: both
+  `0.1.5-rc.2` and `0.1.6-alpha.2` import
+  `@deepseek-ai/dsh-client-ui-renderer/src/client/bind.ts` (and
+  `scoped-slots.tsx`) while the published renderer ships only `lib/`, so the
+  slot bench cannot load from the registry. Browser tests exercise `apply()`
+  and the component directly instead.
+- **Not published to npm**: `npm whoami` reports no authenticated user in the
+  development environment. `docs/publishing.md` holds the manual runbook and
+  the reasoning for publishing the core first.
 - **Approval requires an open turn** upstream; assessments only run inside the
   tool pipeline, so this is satisfied by construction.
