@@ -23,7 +23,8 @@
     "example:game": "pnpm --filter @buberlo/example-standalone-game start",
     "example:dsh": "pnpm --filter @buberlo/example-coding start:dsh",
     "evals": "tsx scripts/run-evals.ts",
-    "verify": "bash scripts/verify.sh"
+    "verify": "bash scripts/verify.sh",
+    "calibrate": "tsx scripts/calibrate.ts"
   },
   "devDependencies": {
     "@types/node": "26.6.2",

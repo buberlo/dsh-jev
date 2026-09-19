@@ -14,69 +14,14 @@
  *   TYPESAFE_API_KEY=... pnpm evals -- --live
  */
 
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import {
   createJevCore,
   LiveTypeSafeProvider,
   MockJevProvider,
   type JevCore,
-  type MockAnswerSpec,
   type MockScenario,
-  type SkillCandidateInfo,
 } from '@buberlo/jev-core'
-
-interface FixtureCandidate {
-  id: string
-  categories: string[]
-  description?: string
-  restricted?: boolean
-}
-
-interface SelectionFixture {
-  id: string
-  lang: 'en' | 'de'
-  kind: 'selection'
-  task: string
-  step?: string
-  candidates: FixtureCandidate[]
-  categories: Array<{ id: string; description?: string }>
-  answers: Record<string, MockAnswerSpec>
-  expect: { status: string; selected: string[]; restrictedNeverSent?: string[] }
-}
-
-interface AssessmentFixture {
-  id: string
-  lang: 'en' | 'de'
-  kind: 'assessment'
-  task: string
-  toolId: string
-  arguments: unknown
-  restrictions: string[]
-  answers: Record<string, MockAnswerSpec>
-  expect: { status: string }
-}
-
-interface SkillFixture {
-  id: string
-  lang: 'en' | 'de'
-  kind: 'skill'
-  task: string
-  step?: string
-  candidates: SkillCandidateInfo[]
-  answers: Record<string, MockAnswerSpec>
-  expect: { status: string; skill?: string }
-}
-
-type Fixture = SelectionFixture | AssessmentFixture | SkillFixture
-
-function loadFixtures(): Fixture[] {
-  const path = fileURLToPath(new URL('../evals/fixtures/decisions.v1.jsonl', import.meta.url))
-  return readFileSync(path, 'utf8')
-    .split('\n')
-    .filter(line => line.trim().length > 0)
-    .map(line => JSON.parse(line) as Fixture)
-}
+import { loadFixtures, type Fixture } from './lib/fixtures.js'
 
 function mockScenarioFor(fixture: Fixture): MockScenario {
   return {
@@ -170,6 +115,7 @@ async function evaluateCase(core: JevCore, fixture: Fixture): Promise<CaseResult
     toolId: fixture.toolId,
     arguments: fixture.arguments,
     restrictions: fixture.restrictions,
+    ...(fixture.includeRiskScore === true ? { includeRiskScore: true } : {}),
   })
   return {
     id: fixture.id,

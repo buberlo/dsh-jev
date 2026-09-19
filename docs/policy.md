@@ -9,6 +9,13 @@ carry a rule id, the measured values, and the resulting action.
 These are **starting values, not calibrated operating points** for any target
 application. Calibrate them against your own data before relying on them.
 
+`pnpm calibrate` measures each fixture once and sweeps the thresholds in code,
+reporting agreement and the parameter range of every perfectly agreeing
+combination. The first live run (2026-09-19, 25 fixtures) placed the defaults
+inside wide ranges — e.g. `restriction` 0.30..0.85 — which means the sample
+cannot separate values inside that range. Treat the sweep as a way to find a
+starting region and to detect wrong polarity, not as a finished calibration.
+
 | Setting | Default | Meaning |
 |---|---|---|
 | `thresholds.relevance` | 0.5 | minimum Noul probability for a category/skill to count as relevant |

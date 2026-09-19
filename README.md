@@ -35,7 +35,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
-| Tests | 120 (82 core + 38 DSH integration) · 15 evaluation fixtures |
+| Tests | 120 (82 core + 38 DSH integration) · 25 evaluation fixtures |
 | Live API | implemented, requires an explicit key; not part of any default |
 | License | MIT |
 
@@ -270,7 +270,8 @@ half; the plugin runs identically from its composed configuration.
 | Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested; module served by a running web app |
 | Real `dsh` CLI profile/loader | verified (see `docs/upstream-compatibility.md`) |
 | Published packages | registry install verified: profile layer composed, host plugin loaded, client module served by a running web app |
-| Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 15/15 fixture agreement, 0 errors, mean 528 ms — a measurement, not an accuracy claim |
+| Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 25/25 fixture agreement, 0 errors, mean 483 ms — a measurement, not an accuracy claim |
+| Threshold calibration | `pnpm calibrate` measures once and sweeps thresholds; live run reports agreement ranges (defaults are inside them), not calibrated operating points |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
 
 ## Repository layout
@@ -305,6 +306,7 @@ scripts/               verify.sh · packaging-test.mjs · run-evals.ts
 pnpm install          # workspace install
 pnpm build            # tsc for both packages
 pnpm test             # 120 tests
+pnpm calibrate        # threshold sweep over the fixtures (mock; --live with a key)
 pnpm evals            # 15 mock evaluation fixtures
 pnpm verify           # install → build → typecheck → tests → evals → examples → packaging
 ```

@@ -43,6 +43,10 @@ Nothing here is a promise of a release.
   `docs/evaluation.md`.
 - Manual publish runbook (`docs/publishing.md`) and a test-only CI workflow
   (`.github/workflows/verify.yml`); no release or deployment automation.
+- Evaluation dataset grown to 25 de/en cases (negations, injection, duplicate
+  category membership, all-restricted catalogs, below-threshold picks, task
+  mismatch, risk-score non-gating) and a threshold calibration sweep
+  (`pnpm calibrate`) with a first live measurement.
 - Registry distribution: `dsh plugin add @buberlo/dsh-jev` verified end to end
   (profile layer, host load, served client module).
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
@@ -69,11 +73,14 @@ Nothing here is a promise of a release.
 - **Live provider**: fully implemented, not executed here (no credentials).
 - **Published at `0.1.0`** (2026-09-19); future releases stay manual
   (`docs/publishing.md`), intentionally without release automation.
-- **Thresholds are uncalibrated defaults**; they need tuning against real data.
+- **Thresholds are uncalibrated defaults**; `pnpm calibrate` now reports the
+  region they sit in, but the 25-case sample cannot separate values inside it.
+  Real calibration needs labeled cases per consequence class.
 
 ## Planned (not implemented)
 
-- Calibration tooling for thresholds against a labelled dataset.
+- Labeled calibration corpus with enough cases per consequence class to narrow
+  the reported threshold ranges.
 - Per-category pre-selection with a documented second-stage ranking for very
   large taxonomies (> 255 candidates) beyond the current chunking.
 - An approval-answerer example for headless DSH deployments.

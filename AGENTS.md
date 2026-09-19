@@ -39,7 +39,8 @@ pnpm build              # tsc for both packages
 pnpm typecheck          # tsc --noEmit for both packages
 pnpm test               # vitest run per package (core 82, dsh-jev 38)
 pnpm test --filter ...  # see vitest docs; use pnpm --filter <pkg> test
-pnpm evals              # mock evaluation fixtures (offline)
+pnpm evals              # mock evaluation fixtures (offline, 25 cases)
+pnpm calibrate          # threshold sweep over the fixtures (mock; --live with a key)
 pnpm example:coding     # offline example (synthetic)
 pnpm example:ops        # offline example (synthetic)
 pnpm example:game       # offline example (core only)

@@ -19,6 +19,9 @@ pnpm test
 echo "== offline evaluation (mock) =="
 pnpm evals
 
+echo "== threshold calibration (mock — plumbing only) =="
+pnpm calibrate > /dev/null
+
 echo "== examples =="
 pnpm example:coding > /dev/null
 pnpm example:ops > /dev/null
