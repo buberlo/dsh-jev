@@ -143,3 +143,32 @@ One batched request with independent questions:
 | Tool assessment | `ask` or `hold` (configurable; never allow) | approval can still allow the concrete call |
 | Skill routing | no skill suggestion | normal agent flow |
 | Model routing | keep the existing model | normal agent flow |
+
+## Related work and comparison
+
+The same System-One pattern is being adopted by other harnesses. Sydney
+Runkle's LangChain article *Building a Harness with Jev*
+(<https://x.com/sydneyrunkle/status/2100754364545761643>, 2026-09-18) describes
+Jev middleware with a very similar division of labor:
+
+| LangChain integration | dsh-jev counterpart |
+|---|---|
+| `TypeSafeClassifier` (`langchain-typesafe`) | provider layer: `LiveTypeSafeProvider` / `MockJevProvider` + boundary validation |
+| `ModelRouterMiddleware` (Jev picks from configured model choices) | `routeModel()` on the `agent/request` waterfall, with catalog verification and fallback to the existing model |
+| `AutoModeMiddleware(tools=["bash"])` (tool-risk gating before execution) | `assessToolCall()` on the async `tools/pre-execute` waterfall (`ask`/`hold`/`deny`, fail-closed) |
+
+Differences that are specific to this repository rather than the pattern:
+
+- It binds to DSH's verified extension points (agent scope, scoped
+  `tools.restrict`, monotonic `tools.guard`, observation via `tools/result`)
+  instead of middleware abstractions.
+- It adds dynamic tool *selection* (narrowing the visible tool set with an
+  explicit abstention and a recovery path), not only risk gating.
+- It adds a deterministic loop guard that involves no model at all.
+- Responses are validated structurally at the system boundary, and a missing
+  assessment never becomes a permission.
+- It ships a deterministic mock provider so the whole path runs offline.
+
+TypeSafe's own agent skill for writing integrations:
+<https://github.com/typesafe-ai/skills/blob/main/skills/typesafe-ai/SKILL.md>.
+
