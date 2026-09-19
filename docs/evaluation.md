@@ -83,6 +83,9 @@ latency: mean 482.9 ms, p50 321.7 ms
 abstentions: 6, errors: 0, misdecisions (vs fixture expectation): 0
 ```
 
+A second run with a rotated authorization reproduced the result within noise:
+25/25, 0 errors, mean 474.2 ms, p50 324.0 ms (both `jev-1.13.0`).
+
 Reading this honestly: agreement with fixtures that were authored offline is a
 consistency measurement on 25 cases, not an accuracy, cost, or latency
 benchmark. Six cases are intentional abstentions or `none` outcomes. Two cases are intentional abstentions (the "no suitable candidate"

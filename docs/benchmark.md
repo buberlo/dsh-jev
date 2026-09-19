@@ -34,15 +34,17 @@ macOS arm64, Node 26.9.0, 2026-09-19:
 | B Jev mock + shadow | 2 ms / 1 ms | 2,180 B | 1 | 2 selections, 1 assessment |
 | C Jev mock + enforce | 2 ms / 1 ms | **1,279 B** | 1 | + 2 restrictions applied |
 | C2 mock + enforce, hold assessment | 2 ms / 1 ms | 1,279 B | **0** | 1 ask (execution withheld) |
-| D Jev **live** + shadow | **1,604 ms** / 1,498 ms (min 1,377, max 2,343) | 2,180 B | 1 | real Jev answers |
+| D Jev **live** + shadow | **1,604 ms** / 1,498 ms (first run) · **1,466 ms** / 1,441 ms (second run) | 2,180 B | 1 | real Jev answers |
 
 Reading:
 
 - **Mock Jev is free in this loop.** The integration itself adds no measurable
   wall-clock; the decisions are deterministic and local.
-- **Live Jev costs ≈1.6 s per turn here** for two selections and one
-  assessment (≈0.5 s per decision, consistent with the evaluation run's
-  483 ms mean). That is the price of real semantics.
+- **Live Jev costs ≈1.5 s per turn here** for two selections and one
+  assessment (≈0.5 s per decision, consistent with the evaluation runs'
+  ~0.47–0.48 s mean). Two independent runs with different authorizations
+  agreed (1,604 ms and 1,466 ms means), so the cost is stable rather than a
+  one-off. That is the price of real semantics.
 - **Selection removed 41 % of the tool-schema bytes** in this synthetic set
   (six tools → one). A real model would see fewer input tokens; whether that
   offsets the Jev cost is exactly what the CLI tier must measure.
