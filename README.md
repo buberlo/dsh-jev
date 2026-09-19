@@ -256,6 +256,15 @@ half; the plugin runs identically from its composed configuration.
 - **Bounded, redacted data.** Only task text, tool metadata, and bounded
   arguments leave the process; redaction is an extra measure, not anonymization.
 
+## Measured value
+
+![Does live Jev add value?](docs/assets/bench-value.png)
+
+Live Jev prevented 4 of 10 runs from destroying a protected audit trail that
+the baseline deleted — at ≈ +4.6 s per turn in shadow, +6.7 s with the guard
+enabled. Mock Jev adds no measurable wall-clock. Full method, raw numbers and
+limits: [`docs/benchmark.md`](docs/benchmark.md).
+
 ## Status
 
 | Area | Status |
