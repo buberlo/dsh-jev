@@ -93,6 +93,14 @@ export interface Config {
     enabled?: boolean
     /** Inject the bounded hint in enforce mode (shadow only logs). */
     injectHint?: boolean
+    /**
+     * Extra routing guidance per skill name, appended to the skill's own
+     * `whenToUse`. Use it to sharpen routing without editing the vendored
+     * skill file.
+     */
+    routingHints?: Record<string, string>
+    /** Maximum characters per skill metadata part (description and when-to-use) sent to Jev. */
+    maxDescriptionChars?: number
   }
   /** Model routing to configured, verified-available targets. */
   modelRouting?: {
@@ -169,6 +177,8 @@ export const Config: z<Config> = z.object({
   skills: z.object({
     enabled: z.boolean().default(false),
     injectHint: z.boolean().default(true),
+    routingHints: z.dict(z.string()).default({}),
+    maxDescriptionChars: z.natural().min(1).default(240),
   }),
   modelRouting: z.object({
     enabled: z.boolean().default(false),
@@ -224,6 +234,8 @@ export interface ResolvedSettings {
   skills: {
     enabled: boolean
     injectHint: boolean
+    routingHints: Record<string, string>
+    maxDescriptionChars: number
   }
   modelRouting: {
     enabled: boolean
@@ -293,6 +305,8 @@ export function resolveSettings(config: Config): ResolvedSettings {
     skills: {
       enabled: config.skills?.enabled ?? false,
       injectHint: config.skills?.injectHint ?? true,
+      routingHints: config.skills?.routingHints ?? {},
+      maxDescriptionChars: config.skills?.maxDescriptionChars ?? 240,
     },
     modelRouting: {
       enabled: config.modelRouting?.enabled ?? false,

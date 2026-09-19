@@ -37,7 +37,7 @@ versioned de/en dataset; `tests/` live inside the plugin package.
 pnpm install            # workspace install (runs per-package tsc prepare)
 pnpm build              # tsc for both packages
 pnpm typecheck          # tsc --noEmit for both packages
-pnpm test               # vitest run per package (core 77, dsh-jev 25)
+pnpm test               # vitest run per package (core 79, dsh-jev 26)
 pnpm test --filter ...  # see vitest docs; use pnpm --filter <pkg> test
 pnpm evals              # mock evaluation fixtures (offline)
 pnpm example:coding     # offline example (synthetic)

@@ -170,14 +170,23 @@ async function runSkills(
   const skills = ctx.get('skills')
   if (skills === undefined) return
   const catalog = await skills.list({ scope: agent })
+  const hints = runtime.settings.skills.routingHints
   const candidates = catalog
     .filter(isModelInvocable)
     .slice(0, runtime.settings.maxSkills)
-    .map(skill => ({
-      name: skill.name,
-      description: skill.description,
-      ...(skill.whenToUse === undefined ? {} : { whenToUse: skill.whenToUse }),
-    }))
+    .map(skill => {
+      // A configured routing hint is appended to the skill's own whenToUse and
+      // never edits the skill file, so vendored content stays diffable.
+      const hint = hints[skill.name]
+      const whenToUse = [skill.whenToUse, hint]
+        .filter((part): part is string => part !== undefined && part.length > 0)
+        .join(' ')
+      return {
+        name: skill.name,
+        description: skill.description,
+        ...(whenToUse.length === 0 ? {} : { whenToUse }),
+      }
+    })
   if (candidates.length === 0) return
 
   const snapshotVersion = state.snapshot.version
@@ -185,6 +194,7 @@ async function runSkills(
     task: state.snapshot.task,
     step: state.snapshot.step,
     candidates,
+    maxDescriptionChars: runtime.settings.skills.maxDescriptionChars,
     signal,
     mode: runtime.mode,
   })

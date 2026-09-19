@@ -49,14 +49,33 @@ When the plugin's `skills.enabled` is true, the pre-step adapter:
 1. calls `ctx.skills.list({ scope: agent })` and keeps model-invocable skills;
 2. sends only **metadata** (name, description, optional `whenToUse`, capped) to
    Jev through `routeSkills()` — the skill body never leaves the process;
-3. in `enforce` mode injects one bounded one-line hint per turn
+3. appends configured `skills.routingHints[<name>]` to the skill's own
+   `whenToUse` for this request only — the vendored file stays byte-identical;
+4. in `enforce` mode injects one bounded one-line hint per turn
    (`Skill routing suggestion: "typesafe-ai" — …`) through `agent.inject`;
-4. leaves loading the actual body to the normal skill mechanism
+5. leaves loading the actual body to the normal skill mechanism
    (`dsh-tool-skill`), so the full instructions enter context only when the
    model decides they help.
 
-The upstream `SKILL.md` carries no `whenToUse` key; routing therefore uses the
-description text. See `docs/roadmap.md` for the optional routing-hint overlay.
+Because the upstream `SKILL.md` carries no `whenToUse`, routing guidance is
+supplied through configuration:
+
+```yaml
+- id: jev
+  name: '@buberlo/dsh-jev'
+  config:
+    skills:
+      enabled: true
+      routingHints:
+        typesafe-ai: 'especially for TypeSafe/Jev integration, System One models, classifiers, and semantic routing'
+```
+
+`skills.maxDescriptionChars` (default 240) bounds the description and the
+combined when-to-use text separately, so the hint survives a long upstream
+description. `packages/dsh-jev/tests/skill-install.spec.ts` verifies discovery,
+routing, hint injection without the body, and that the vendored file is
+unmodified; `evals/fixtures/decisions.v1.jsonl` contains matching de/en skill
+routing cases.
 
 ## Updating the vendored skill
 

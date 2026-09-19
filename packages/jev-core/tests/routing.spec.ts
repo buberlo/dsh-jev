@@ -52,6 +52,33 @@ describe('routeSkills', () => {
     expect(sent).toContain('test-runner')
     expect(sent).not.toContain('skill body content')
   })
+
+  it('truncates a long criterion to maxDescriptionChars', async () => {
+    const provider = new MockJevProvider({
+      scenario: { answers: { needs_skill: { noul: 0.9 }, skill: { choice: { choice: 'long-skill', confidence: 1 } } } },
+    })
+    const core = createJevCore({ provider, mode: 'enforce' })
+    await core.routeSkills({
+      task: 'Task',
+      candidates: [{ name: 'long-skill', description: 'd'.repeat(500) }],
+      maxDescriptionChars: 100,
+    })
+    const request = provider.requests[0]
+    const question = Object.values(request?.questions ?? {}).find(candidate => candidate.type === 'choice')
+    expect(question?.type).toBe('choice')
+    if (question?.type !== 'choice') return
+    expect(String(question.criteria['long-skill'])).toHaveLength(101)
+    expect(String(question.criteria['long-skill'])).toMatch(/…$/)
+  })
+
+  it('rejects an invalid maxDescriptionChars', async () => {
+    const core = createJevCore({ provider: new MockJevProvider(), mode: 'shadow' })
+    await expect(core.routeSkills({
+      task: 'Task',
+      candidates: [{ name: 'x', description: 'y' }],
+      maxDescriptionChars: 0,
+    })).rejects.toMatchObject({ code: 'INVALID_CONFIG' })
+  })
 })
 
 describe('routeModel', () => {

@@ -11,6 +11,7 @@
 
 import type { EntryType, Question, Questions, ResultFor } from '@typesafe-ai/sdk'
 import type { JevCore } from './core.js'
+import { JevError } from './errors.js'
 import { choice, noul } from './primitives.js'
 import type { EvaluationDiagnostics, JevFailure, JevMode } from './types.js'
 
@@ -29,6 +30,8 @@ export interface SkillRoutingInput {
   readonly task: string
   readonly step?: string
   readonly candidates: readonly SkillCandidateInfo[]
+  /** Maximum characters per metadata part (description and when-to-use) sent for one candidate; defaults to 240. */
+  readonly maxDescriptionChars?: number
   readonly signal?: AbortSignal | undefined
   readonly mode?: JevMode | undefined
 }
@@ -119,6 +122,10 @@ export async function routeSkills(core: JevCore, input: SkillRoutingInput): Prom
   }
 
   const candidates = [...input.candidates].slice(0, core.config.limits.maxSkills)
+  const maxChars = input.maxDescriptionChars ?? 240
+  if (!Number.isInteger(maxChars) || maxChars < 1) {
+    throw new JevError('INVALID_CONFIG', 'maxDescriptionChars must be a positive integer')
+  }
   const state: EntryType = {
     task: input.task,
     ...(input.step === undefined ? {} : { step: input.step }),
@@ -126,10 +133,17 @@ export async function routeSkills(core: JevCore, input: SkillRoutingInput): Prom
   }
   const criteria: Record<string, string | null> = { __none__: 'No skill is needed for this turn.' }
   for (const candidate of candidates) {
-    const description = candidate.whenToUse === undefined
-      ? candidate.description
-      : `${candidate.description} When to use: ${candidate.whenToUse}`
-    criteria[candidate.name] = description.length > 240 ? `${description.slice(0, 240)}…` : description
+    const description = candidate.description.length > maxChars
+      ? `${candidate.description.slice(0, maxChars)}…`
+      : candidate.description
+    // The when-to-use guidance (skill's own plus any configured routing hint)
+    // is bounded on its own, so a hint can never be truncated away by a long
+    // description.
+    criteria[candidate.name] = candidate.whenToUse === undefined
+      ? description
+      : `${description} When to use: ${candidate.whenToUse.length > maxChars
+        ? `${candidate.whenToUse.slice(0, maxChars)}…`
+        : candidate.whenToUse}`
   }
 
   const questions: Questions = {

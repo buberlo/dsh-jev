@@ -9,9 +9,11 @@
  * See `docs/skills.md` for provenance and the update procedure.
  */
 
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import type { MockJevProvider } from '@buberlo/jev-core'
 import SkillRegistry, { isModelInvocable } from '@deepseek-ai/dsh-skill'
 import * as SkillFilesystem from '@deepseek-ai/dsh-skill-filesystem'
 import { mountAgentLoopTestDependencies, mountAgentLoopTestHarness } from '@deepseek-ai/dsh-agent-loop-testkit'
@@ -43,7 +45,10 @@ async function catalogProjection(ctx: Context): Promise<Array<{ name: string; de
   }))
 }
 
-async function mountWithVendoredSkills() {
+async function mountWithVendoredSkills(skills: {
+  routingHints?: Record<string, string>
+  maxDescriptionChars?: number
+} = {}) {
   const ctx = new Context()
   contexts.push(ctx)
   await mountAgentLoopTestDependencies(ctx)
@@ -58,7 +63,12 @@ async function mountWithVendoredSkills() {
     mode: 'enforce',
     selection: { enabled: false },
     assessment: { enabled: false },
-    skills: { enabled: true, injectHint: true },
+    skills: {
+      enabled: true,
+      injectHint: true,
+      ...(skills.routingHints === undefined ? {} : { routingHints: skills.routingHints }),
+      ...(skills.maxDescriptionChars === undefined ? {} : { maxDescriptionChars: skills.maxDescriptionChars }),
+    },
     mock: {
       answers: {
         needs_skill: { noul: 0.95 },
@@ -98,5 +108,33 @@ describe('vendored TypeSafe skill', () => {
     // The body must not be injected by the routing hint.
     expect(texts.some(text => text.includes('## Read the live docs'))).toBe(false)
     expect(ctx.jev.stats.selections).toBe(0)
+  })
+
+  it('appends configured routing hints without editing the vendored file', async () => {
+    const routingHints = { 'typesafe-ai': 'especially when the task mentions Jev, System One, or semantic routing' }
+    const { ctx, adapter, harness } = await mountWithVendoredSkills({ routingHints, maxDescriptionChars: 400 })
+    const agent = await harness.create(SessionId('skill-hint'), { provider: 'scripted', model: 'scripted-1' })
+    adapter.enqueue('skill-hint', textTurn('done'))
+    agent.followup(createUserMessage({
+      content: [{ type: 'text', text: 'Integriere TypeSafe in unseren Request-Router' }],
+      source: { kind: 'user' },
+    }))
+    await agent.whenIdle()
+
+    const provider = ctx.jev.core.config.provider as MockJevProvider
+    const criteria = provider.requests
+      .flatMap(request => Object.values(request.questions))
+      .filter(question => question.type === 'choice')
+      .map(question => question.type === 'choice' ? question.criteria : {})
+      .find(candidate => 'typesafe-ai' in candidate)
+    expect(criteria).toBeDefined()
+    const criterion = String(criteria?.['typesafe-ai'])
+    expect(criterion).toContain('When to use: especially when the task mentions Jev')
+    // Each metadata part is bounded on its own, so the hint survives a long description.
+    expect(criterion.length).toBeLessThanOrEqual(2 * 400 + 20)
+
+    // The vendored artifact stays byte-identical to upstream.
+    const vendored = readFileSync(fileURLToPath(new URL('../../../.agents/skills/typesafe-ai/SKILL.md', import.meta.url)), 'utf8')
+    expect(vendored).not.toContain('especially when the task mentions Jev')
   })
 })

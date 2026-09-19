@@ -31,6 +31,9 @@ Nothing here is a promise of a release.
   - Explicit `off` / `shadow` / `enforce` modes and `mock` / `live` providers.
 - Examples: coding, read-only ops, standalone game (core only), real DSH
   runtime.
+- Vendored TypeSafe agent skill (`.agents/skills/typesafe-ai`, pinned upstream
+  commit + license) with real-provider discovery and routing tests, a
+  configured routing-hint overlay, and de/en evaluation cases.
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.

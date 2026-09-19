@@ -42,8 +42,8 @@ with the answers. The generative model still does planning, prose, and code.
 
 | Area | Status |
 |---|---|
-| `@buberlo/jev-core`: providers, validation, policies, selection, assessment, routing, loop detector | implemented, unit-tested (77 tests) |
-| `@buberlo/dsh-jev`: plugin, service, adapters | implemented, integration-tested (23 tests) |
+| `@buberlo/jev-core`: providers, validation, policies, selection, assessment, routing, loop detector | implemented, unit-tested (79 tests) |
+| `@buberlo/dsh-jev`: plugin, service, adapters | implemented, integration-tested (26 tests) |
 | Real DSH runtime: ToolRuntime pipeline + full agent loop + approval service | tested |
 | TypeSafe agent skill vendored in `.agents/skills/` (pinned, MIT) | installed; discovery + routing tested with the real filesystem provider |
 | Real `dsh` CLI profile boot with this bundle | verified (see `docs/upstream-compatibility.md`) |
@@ -109,6 +109,10 @@ Configure it by overriding that row's `config` in your profile patch:
     assessment:
       enabled: true
       onFailure: ask        # ask | hold
+    skills:
+      enabled: true
+      routingHints:
+        typesafe-ai: 'especially for TypeSafe/Jev integration, System One models, classifiers, and semantic routing'
     modelRouting:
       enabled: false
       routes:
@@ -125,7 +129,7 @@ pnpm example:coding     # tool selection + call assessment on synthetic data
 pnpm example:ops        # read-only ops router (synthetic incident)
 pnpm example:game       # standalone game importing only jev-core
 pnpm example:dsh        # real DSH services + real plugin, synthetic answers
-pnpm evals              # 12 mock evaluation fixtures (de/en)
+pnpm evals              # 15 mock evaluation fixtures (de/en)
 pnpm test               # unit + integration tests
 pnpm verify             # install → build → typecheck → tests → evals → examples → packaging
 ```

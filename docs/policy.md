@@ -115,6 +115,10 @@ No Jev involved — a deterministic local invariant:
 - One Noul ("does this turn need a skill?") plus one Choice over model-invocable
   skill names plus `__none__`; only metadata (name, description, when-to-use) is
   transmitted, never skill bodies.
+- `skills.routingHints` appends extra routing guidance per skill name without
+  editing the vendored skill file; the combined when-to-use text is bounded by
+  `skills.maxDescriptionChars` separately from the description, so a hint
+  cannot be truncated away by a long upstream description.
 - Selection requires the needs-skill threshold, the selection threshold, and
   the confidence threshold.
 - Enforce mode injects one bounded one-line hint per turn; the skill body is

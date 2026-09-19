@@ -89,6 +89,25 @@ The file references are from the cloned DSH source at the commit above.
 - `ctx.skills.list({ scope })` returns `SkillSummary` metadata, and
   `isModelInvocable(skill)` honors the invocation policy
   (`packages/skill/skill/src/index.ts:470`, `:126`).
+- Local skill discovery (`@deepseek-ai/dsh-skill-filesystem@0.1.6-alpha.2`):
+  roots are scanned in rank order — `project-dsh` at
+  `<projectRoot>/.dsh/skills` (100), `project-agents` at
+  `<projectRoot>/.agents/skills` (200), `customSkillDirs` (300), user roots
+  (400/500); the project root is the nearest `.git` ancestor; discovery is one
+  level deep (`<name>/SKILL.md` or `<name>.md`).
+- Frontmatter contract verified in `skill-filesystem/src/index.ts`
+  (`parseSkillFile`): `name` (kebab-case) and `description` are required,
+  `whenToUse`, `metadata`, and the invocation booleans are optional, and
+  unknown keys such as `license` are ignored. A malformed entry is skipped
+  with a warning and disappears from the catalog.
+- The standard `@deepseek-ai/dsh-base` bundle already mounts
+  `@deepseek-ai/dsh-skill`, `@deepseek-ai/dsh-skill-filesystem`,
+  `@deepseek-ai/dsh-skill-badge`, and `@deepseek-ai/dsh-tool-skill`
+  (`packages/bundle/base/cordis.patch.yml:280-291`), so a checked-in
+  `.agents/skills` directory needs no configuration. This repository vendors
+  the TypeSafe skill there (pinned `typesafe-ai/skills@65a39f3`, see
+  `docs/skills.md`), and `packages/dsh-jev/tests/skill-install.spec.ts` proves
+  discovery and routing against the real provider.
 
 ### TypeSafe Jev (System One)
 

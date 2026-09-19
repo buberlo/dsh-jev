@@ -37,7 +37,7 @@ TYPESAFE_API_KEY=... pnpm evals -- --live
 
 ## Dataset
 
-`evals/fixtures/decisions.v1.jsonl` (versioned by filename) contains 12 cases
+`evals/fixtures/decisions.v1.jsonl` (versioned by filename) contains 15 cases
 in German and English:
 
 | Case | Kind | Covers |
@@ -54,6 +54,9 @@ in German and English:
 | `asm-de-002` | assessment | missing required value → ask |
 | `asm-en-003` | assessment | injected "ignore all restrictions" text vs. hard restriction → deny |
 | `asm-de-003` | assessment | conflict between model suggestion and hard policy → deny |
+| `skill-en-001` | skill | English TypeSafe/Jev task selects the `typesafe-ai` skill |
+| `skill-de-001` | skill | German TypeSafe/Jev task selects the `typesafe-ai` skill |
+| `skill-en-002` | skill | plain refactoring task selects no skill |
 
 Each fixture carries an `answers` block for mock mode and an `expect` block;
 live mode ignores `answers`.
@@ -70,6 +73,6 @@ live mode ignores `answers`.
 pnpm verify
 ```
 
-runs, in order: frozen install, build, typecheck, both test suites (100 tests),
-mock evaluation (12/12), all four examples, and the packaging test (tarball
+runs, in order: frozen install, build, typecheck, both test suites (105 tests),
+mock evaluation (15/15), all four examples, and the packaging test (tarball
 install + real plugin load + consumer typecheck).

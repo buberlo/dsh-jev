@@ -23,6 +23,7 @@ import {
   type JevCore,
   type MockAnswerSpec,
   type MockScenario,
+  type SkillCandidateInfo,
 } from '@buberlo/jev-core'
 
 interface FixtureCandidate {
@@ -56,7 +57,18 @@ interface AssessmentFixture {
   expect: { status: string }
 }
 
-type Fixture = SelectionFixture | AssessmentFixture
+interface SkillFixture {
+  id: string
+  lang: 'en' | 'de'
+  kind: 'skill'
+  task: string
+  step?: string
+  candidates: SkillCandidateInfo[]
+  answers: Record<string, MockAnswerSpec>
+  expect: { status: string; skill?: string }
+}
+
+type Fixture = SelectionFixture | AssessmentFixture | SkillFixture
 
 function loadFixtures(): Fixture[] {
   const path = fileURLToPath(new URL('../evals/fixtures/decisions.v1.jsonl', import.meta.url))
@@ -125,6 +137,27 @@ async function evaluateCase(core: JevCore, fixture: Fixture): Promise<CaseResult
       actual: `${plan.status} [${plan.selected.join(', ')}]`,
       pass: statusMatches && selectedMatches && restrictedOk,
       detail: plan.failure?.code,
+      latencyMs: performance.now() - started,
+    }
+  }
+  if (fixture.kind === 'skill') {
+    const result = await core.routeSkills({
+      task: fixture.task,
+      ...(fixture.step === undefined ? {} : { step: fixture.step }),
+      candidates: fixture.candidates,
+    })
+    const actual = result.skill === undefined ? result.status : `${result.status} [${result.skill}]`
+    const expected = fixture.expect.skill === undefined
+      ? fixture.expect.status
+      : `${fixture.expect.status} [${fixture.expect.skill}]`
+    return {
+      id: fixture.id,
+      kind: fixture.kind,
+      lang: fixture.lang,
+      expected,
+      actual,
+      pass: result.status === fixture.expect.status && result.skill === fixture.expect.skill,
+      detail: result.failure?.code,
       latencyMs: performance.now() - started,
     }
   }
