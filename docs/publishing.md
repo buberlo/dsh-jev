@@ -3,19 +3,20 @@
 There is **no** automatic release, publish, or deployment workflow in this
 repository, and adding one is out of scope. Publishing is a manual step.
 
-As of 2026-09-19 **neither package is on npm**, and `npm whoami` reports no
-authenticated npm user in the development environment. Until that changes,
-install from tarballs as described in the README.
+**Status: both packages are published at `0.1.0` (2026-09-19).** The registry
+install path is verified: `dsh plugin add @buberlo/dsh-jev` composed the bundle
+layer, the host plugin loaded, and a running web app served
+`@buberlo/dsh-jev/client.js`. The steps below are the manual process for the
+next release.
 
-## Why publish `@buberlo/jev-core` first
+## Why `@buberlo/jev-core` publishes first
 
-`@buberlo/dsh-jev` depends on the exact version of `@buberlo/jev-core`.
-`dsh plugin --profile <name> add ./buberlo-dsh-jev-0.1.0.tgz` resolves that
-transitive dependency from the registry, so without a published core the user
-must install both tarballs as direct dependencies (the current documented
-path). The alternative — bundling the core into the plugin — was rejected: it
-duplicates the policy code and prevents the core from being reused standalone
-(games, search, MCP routers), which is an explicit goal of this repository.
+`@buberlo/dsh-jev` depends on the published version of `@buberlo/jev-core`.
+That is what lets a single `dsh plugin add @buberlo/dsh-jev` (or a
+plugin-only tarball install) resolve the core transitively. The alternative —
+bundling the core into the plugin — was rejected: it duplicates the policy
+code and prevents the core from being reused standalone (games, search, MCP
+routers), which is an explicit goal of this repository.
 
 ## Steps
 

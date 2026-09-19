@@ -43,6 +43,8 @@ Nothing here is a promise of a release.
   `docs/evaluation.md`.
 - Manual publish runbook (`docs/publishing.md`) and a test-only CI workflow
   (`.github/workflows/verify.yml`); no release or deployment automation.
+- Registry distribution: `dsh plugin add @buberlo/dsh-jev` verified end to end
+  (profile layer, host load, served client module).
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.
@@ -65,8 +67,8 @@ Nothing here is a promise of a release.
   npm (it imports renderer `src/` paths the published renderer does not ship),
   so the browser tests exercise `apply()` and the component directly.
 - **Live provider**: fully implemented, not executed here (no credentials).
-- **Packages are not published to npm**, and there is intentionally no release
-  workflow; until then both tarballs must be profile dependencies.
+- **Published at `0.1.0`** (2026-09-19); future releases stay manual
+  (`docs/publishing.md`), intentionally without release automation.
 - **Thresholds are uncalibrated defaults**; they need tuning against real data.
 
 ## Planned (not implemented)

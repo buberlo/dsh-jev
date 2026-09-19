@@ -170,7 +170,8 @@ The file references are from the cloned DSH source at the commit above.
 
 ## Installation path that was actually executed
 
-Reproducible local proof (see also `scripts/packaging-test.mjs`):
+Reproducible registry proof (2026-09-19) plus local proof (see also
+`scripts/packaging-test.mjs`):
 
 1. `pnpm build`, then `pnpm pack` both packages.
 2. Fresh consumer project: `npm install <core.tgz> <dsh-jev.tgz> <pinned DSH peers>`
@@ -235,8 +236,11 @@ The served module also contains the `settings.jev` and
   `scoped-slots.tsx`) while the published renderer ships only `lib/`, so the
   slot bench cannot load from the registry. Browser tests exercise `apply()`
   and the component directly instead.
-- **Not published to npm**: `npm whoami` reports no authenticated user in the
-  development environment. `docs/publishing.md` holds the manual runbook and
-  the reasoning for publishing the core first.
+- **Published**: `@buberlo/jev-core@0.1.0` and `@buberlo/dsh-jev@0.1.0`
+  (2026-09-19). Verified end to end from the registry: `dsh plugin add
+  @buberlo/dsh-jev` installed both packages transitively into a fresh profile,
+  `--dump-config` composed the bundle layer, a headless boot loaded the host
+  plugin, and a running web profile served `@buberlo/dsh-jev/client.js`.
+  Future releases are manual (`docs/publishing.md`).
 - **Approval requires an open turn** upstream; assessments only run inside the
   tool pipeline, so this is satisfied by construction.

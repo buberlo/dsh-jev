@@ -31,6 +31,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | | |
 |---|---|
 | Packages | `@buberlo/jev-core` (harness-independent) · `@buberlo/dsh-jev` (DSH plugin/bundle) |
+| npm | both published at `0.1.0` (2026-09-19); registry install verified with `dsh plugin add` |
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
@@ -140,18 +141,19 @@ Details and design notes: [`docs/use-cases.md`](docs/use-cases.md).
 
 ## Install into a DSH profile
 
-The npm packages are not published yet (`npm whoami` reports no authenticated
-user in the development environment; the exact manual steps and the decision
-why the core publishes first are in `docs/publishing.md`). Build tarballs from
-a checkout and install them into your profile:
+Both packages are on npm:
 
 ```sh
-pnpm --filter @buberlo/jev-core pack --pack-destination ./packs
-pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-
-dsh plugin --profile <name> add ./packs/buberlo-jev-core-0.1.0.tgz
-dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.0.tgz
+dsh plugin --profile <name> add @buberlo/dsh-jev
 dsh --profile <name> --dump-config   # shows the "# == @buberlo/dsh-jev" layer
+```
+
+For an unreleased build, pack a tarball from a checkout instead — the published
+core still resolves transitively:
+
+```sh
+pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
+dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.0.tgz
 ```
 
 The bundle inserts one row; configure it by overriding that row's `config`:
@@ -267,6 +269,7 @@ half; the plugin runs identically from its composed configuration.
 | Skill routing + vendored TypeSafe skill | tested against the real filesystem provider |
 | Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested; module served by a running web app |
 | Real `dsh` CLI profile/loader | verified (see `docs/upstream-compatibility.md`) |
+| Published packages | registry install verified: profile layer composed, host plugin loaded, client module served by a running web app |
 | Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 15/15 fixture agreement, 0 errors, mean 528 ms — a measurement, not an accuracy claim |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
 
