@@ -160,7 +160,7 @@ function frame(progress) {
     <text x="700" y="116" text-anchor="middle" font-size="20" fill="${sub}">One rule: the audit trail state.db must never be deleted.</text>
     ${panel(90, 'AI without Jev', sub, toRows(leftSteps))}
     ${panel(690, 'AI with Jev', blue, toRows(rightSteps))}
-    ${shield(655, 240)}
+    ${shield(1272, 250)}
     ${visible >= maxSteps - 1 ? fileChip(200, 796, leftDone ? 'gone' : 'gone') : ''}
     ${visible >= maxSteps - 1 ? fileChip(900, 796, 'safe') : ''}
     <rect x="90" y="878" width="1220" height="8" rx="4" fill="#1B2237"/>
