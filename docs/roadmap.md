@@ -78,16 +78,21 @@ Nothing here is a promise of a release.
   npm (it imports renderer `src/` paths the published renderer does not ship),
   so the browser tests exercise `apply()` and the component directly.
 - **Live provider**: fully implemented, not executed here (no credentials).
-- **Published** (first release `0.1.0` on 2026-09-19, registry `0.1.1`); the
-  local `0.1.2` fixes the assessment question wording measured by the use
-  case (read false positives) and needs one manual publish
-  (`docs/publishing.md`), intentionally without release automation.
+- **Published on npm at `0.1.0` only** (2026-09-19). Local `0.1.1` added
+  package READMEs but was never published. Workspace `0.1.2` fixes the
+  assessment question wording measured by the use case (read false positives)
+  and needs one manual publish (`docs/publishing.md`), intentionally without
+  release automation.
 - **Thresholds are uncalibrated defaults**; `pnpm calibrate` now reports the
   region they sit in, but the 25-case sample cannot separate values inside it.
   Real calibration needs labeled cases per consequence class.
 
 ## Planned (not implemented)
 
+- Manual publish of workspace `0.1.2` (call-scoped assessment wording) to npm.
+  `@buberlo/jev-core` and `@buberlo/dsh-jev` are already on the registry at
+  `0.1.0`; a consumer can install the plugin alone and get that published
+  core transitively. `0.1.2` is not on npm yet.
 - Labeled calibration corpus with enough cases per consequence class to narrow
   the reported threshold ranges.
 - Per-category pre-selection with a documented second-stage ranking for very
@@ -95,7 +100,6 @@ Nothing here is a promise of a release.
 - An approval-answerer example for headless DSH deployments.
 - Optional evaluation against a recorded session fixture for regression
   comparisons.
-- Publishing `@buberlo/jev-core` to npm so the plugin can be installed alone.
 
 ## Out of scope
 

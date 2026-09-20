@@ -82,8 +82,8 @@ cache), which is what makes per-call approvals meaningful.
 ## 4. Understand what the tests prove
 
 ```sh
-pnpm test        # 105 tests
-pnpm evals       # 15 evaluation fixtures, mock mode
+pnpm test        # 120 tests (82 core + 38 DSH)
+pnpm evals       # 25 evaluation fixtures, mock mode
 ```
 
 - `pnpm test` proves program logic against the real DSH runtime: the real tool
@@ -125,12 +125,18 @@ dsh plugin --profile demo add @buberlo/dsh-jev
 dsh --profile demo --dump-config | grep -A 2 'buberlo'
 ```
 
-Building from a checkout instead (unreleased changes):
+Building from a checkout instead (workspace `0.1.2`, not yet on npm). Pack
+**both** tarballs: the unpublished assessment wording lives in
+`@buberlo/jev-core`, and a plugin-only tarball still pulls `jev-core@0.1.0`
+from the registry:
 
 ```sh
 pnpm build
+pnpm --filter @buberlo/jev-core pack --pack-destination ./packs
 pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-dsh plugin --profile demo add ./packs/buberlo-dsh-jev-0.1.1.tgz
+dsh plugin --profile demo add ./packs/buberlo-dsh-jev-0.1.2.tgz
+# overlay packs/buberlo-jev-core-0.1.2.tgz on the profile
+# (see BENCH_LOCAL_PACKS in docs/benchmark.md)
 ```
 
 You should see a `# == @buberlo/dsh-jev` layer with one `jev` row. The plugin

@@ -31,7 +31,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | | |
 |---|---|
 | Packages | `@buberlo/jev-core` (harness-independent) · `@buberlo/dsh-jev` (DSH plugin/bundle) |
-| npm | both published at `0.1.1` (2026-09-19); registry install verified with `dsh plugin add` |
+| npm | both published at `0.1.0` only (2026-09-19; registry install verified with `dsh plugin add`). Workspace is `0.1.2` (call-scoped assessment wording **not yet on npm**). |
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
@@ -89,7 +89,7 @@ caused it. Every model value is visibly synthetic (`mock/jev-synthetic`).
 | DSH moment | Jev question (example) | Deterministic consequence |
 |---|---|---|
 | `agent/pre-step` | *Is a tool from category "files" relevant?* | narrow the visible tools via scoped `tools.restrict` |
-| `tools/pre-execute` | *Does this call match the task? Is information missing? Does it violate a stated restriction?* | `allow` · `ask` (approval) · `hold` · `deny` |
+| `tools/pre-execute` | *Does this specific `call` match the task? Does it need missing information? Does the call itself violate a stated restriction?* (observe ≠ modify) | `allow` · `ask` (approval) · `hold` · `deny` |
 | `agent/request` | *Which configured route fits this task?* | switch provider/model only if the target is verified available |
 | `ctx.skills` | *Does this turn need a skill? Which one?* | inject one bounded hint; the body loads only if the model asks |
 
@@ -148,12 +148,16 @@ dsh plugin --profile <name> add @buberlo/dsh-jev
 dsh --profile <name> --dump-config   # shows the "# == @buberlo/dsh-jev" layer
 ```
 
-For an unreleased build, pack a tarball from a checkout instead — the published
-core still resolves transitively:
+For an unreleased checkout (workspace `0.1.2`), pack **both** tarballs. The
+assessment wording fix lives in `@buberlo/jev-core`; a plugin-only tarball
+still resolves `jev-core@0.1.0` from npm:
 
 ```sh
+pnpm --filter @buberlo/jev-core pack --pack-destination ./packs
 pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.1.tgz
+dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.2.tgz
+# overlay packs/buberlo-jev-core-0.1.2.tgz on the profile
+# (see BENCH_LOCAL_PACKS in docs/benchmark.md)
 ```
 
 The bundle inserts one row; configure it by overriding that row's `config`:
@@ -286,7 +290,7 @@ must be auditable. Full method, raw numbers, videos and limits:
 | Skill routing + vendored TypeSafe skill | tested against the real filesystem provider |
 | Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested; module served by a running web app |
 | Real `dsh` CLI profile/loader | verified (see `docs/upstream-compatibility.md`) |
-| Published packages | registry install verified: profile layer composed, host plugin loaded, client module served by a running web app |
+| Published packages | npm `0.1.0` only; registry install verified (profile layer, host plugin, served client). Workspace `0.1.2` is unpublished. |
 | Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 25/25 fixture agreement, 0 errors, mean 483 ms — a measurement, not an accuracy claim |
 | Threshold calibration | `pnpm calibrate` measures once and sweeps thresholds; live run reports agreement ranges (defaults are inside them), not calibrated operating points |
 | Benchmark with/without Jev | executed both tiers plus a use case with video (OpenCode Go, `deepseek-v4.1-flash`, 10 runs/variant): mock Jev ≈0 overhead; Jev +4.6 s/turn for 3 decisions; baseline destroyed the audit trail in 4/10 runs while Jev denied every attempt — see `docs/benchmark.md` |
@@ -324,11 +328,11 @@ scripts/               verify.sh · packaging-test.mjs · run-evals.ts
 ```sh
 pnpm install          # workspace install
 pnpm build            # tsc for both packages
-pnpm test             # 120 tests
+pnpm test             # 120 tests (82 core + 38 DSH)
 pnpm calibrate        # threshold sweep over the fixtures (mock; --live with a key)
 pnpm bench:compare    # with/without Jev: real loop, scripted model, no key needed
 pnpm bench:cli        # CLI A/B run harness (needs an OpenAI-compatible gateway)
-pnpm evals            # 15 mock evaluation fixtures
+pnpm evals            # 25 mock evaluation fixtures
 pnpm verify           # install → build → typecheck → tests → evals → examples → packaging
 ```
 

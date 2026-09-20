@@ -1,7 +1,9 @@
 # Upstream compatibility
 
-Verification date: **2026-09-19**. Everything below was checked against the
-sources named here, not against examples copied from earlier discussions.
+Verification date: **2026-09-19** (DSH, TypeSafe, Node). `@buberlo/*` npm
+versions re-checked with `npm view` on **2026-09-20**: registry `0.1.0` only.
+Everything below was checked against the sources named here, not against
+examples copied from earlier discussions.
 
 ## Versions and sources
 
@@ -13,6 +15,7 @@ sources named here, not against examples copied from earlier discussions.
 | `@deepseek-ai/cordis` | `4.0.2` | npm |
 | `@deepseek-ai/schemastery` | `3.18.2` | npm |
 | `@typesafe-ai/sdk` | `0.6.0` | npm + published `src/types.ts`, `src/client.ts`, `src/questions.ts` at tag `v0.6.0` |
+| `@buberlo/jev-core` / `@buberlo/dsh-jev` | npm **`0.1.0` only** (2026-09-19). Workspace **`0.1.2`** (unpublished: package READMEs + call-scoped assessment wording). **No `0.1.1` on the registry.** | `npm view` 2026-09-20 + `package.json` |
 | TypeSafe docs | docs.typesafe.ai (`llms.txt`, primitives, confidence, models, cookbooks) | fetched |
 | Node.js | tested with `26.9.0`; DSH engines require `^22.19.0 || >=24.0.0` | local |
 | pnpm | `12.4.2` | local |
@@ -207,10 +210,15 @@ The served module also contains the `settings.jev` and
 
 ## Demonstrated restrictions
 
-- **Not published**: `@buberlo/jev-core` and `@buberlo/dsh-jev` are not on npm.
-  `dsh plugin add` resolves the transitive `@buberlo/jev-core` from the
-  registry, so until the core is published, both tarballs must be direct
-  dependencies of the profile.
+- **Published on npm at `0.1.0` only**: `@buberlo/jev-core` and
+  `@buberlo/dsh-jev` (2026-09-19). Verified end to end from the registry:
+  `dsh plugin add @buberlo/dsh-jev` installed both packages transitively into
+  a fresh profile, `--dump-config` composed the bundle layer, a headless boot
+  loaded the host plugin, and a running web profile served
+  `@buberlo/dsh-jev/client.js`. There is **no `0.1.1` on the registry**. Local
+  `0.1.1` was a README-only bump that was never published. Workspace `0.1.2`
+  (call-scoped assessment questions that stop read false positives) is **not
+  on npm yet**. Future releases are manual (`docs/publishing.md`).
 - **PTC / code mode**: `run_code` sub-dispatches traverse the same pipeline and
   are assessed (tested with a nested dispatch), but a full PTC runtime was not
   mounted here; `mode: ptc` would additionally require
@@ -219,9 +227,10 @@ The served module also contains the `settings.jev` and
   advisory and does not validate routing, so the adapter treats absence from
   the catalog as "not verified" and falls back to the existing model. A route
   is never invented.
-- **Live run recorded once** (2026-09-19, `jev-1.13.0`): 15/15 fixture
-  agreement, 0 errors, mean 528 ms. Reproducible with an explicit key; without
-  one the runner reports *not executed*, never a pass.
+- **Live run recorded** (2026-09-19, `jev-1.13.0`): first dataset 15/15
+  fixture agreement, 0 errors, mean 528 ms; after growth, 25/25 (see
+  `docs/evaluation.md`). Reproducible with an explicit key; without one the
+  runner reports *not executed*, never a pass.
 - **Client live counters are blocked upstream at this version**: the web
   client's Remote capability set is fixed by build-time value imports
   (`packages/api/remotes/README.md`: "the capability set is fixed by explicit
@@ -236,11 +245,5 @@ The served module also contains the `settings.jev` and
   `scoped-slots.tsx`) while the published renderer ships only `lib/`, so the
   slot bench cannot load from the registry. Browser tests exercise `apply()`
   and the component directly instead.
-- **Published**: `@buberlo/jev-core` and `@buberlo/dsh-jev`; `0.1.0` was the first
-  release (2026-09-19), `0.1.1` adds the package READMEs. Verified end to end from the registry: `dsh plugin add
-  @buberlo/dsh-jev` installed both packages transitively into a fresh profile,
-  `--dump-config` composed the bundle layer, a headless boot loaded the host
-  plugin, and a running web profile served `@buberlo/dsh-jev/client.js`.
-  Future releases are manual (`docs/publishing.md`).
 - **Approval requires an open turn** upstream; assessments only run inside the
   tool pipeline, so this is satisfied by construction.
