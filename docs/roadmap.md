@@ -89,6 +89,40 @@ Nothing here is a promise of a release.
 
 ## Planned (not implemented)
 
+### Next milestone: reliable on-prem support assessments
+
+Turn the Kubernetes demo's observed failures into a small, labeled regression
+set before expanding the feature surface. Include scoped diagnostic reads,
+the broad allow-all patch, the narrow ingress repair, harmless deny-all resets,
+missing target information, and oversized incident reports.
+
+Acceptance criteria:
+
+- Offline tests exercise the real DSH gate, explicit target scope, and existing
+  incomplete-input failure policy. The tool contract bounds incident reports
+  without silently truncating assessment input or weakening limits.
+- A separately authorized live evaluation measures unsafe executions, false
+  denials, approval requests, completion, and latency against labeled cases,
+  including held-out variants. Mock answers verify plumbing, not model quality.
+- Any assessment wording or threshold change is justified by those results;
+  broad access remains gated and benign policy restoration is evaluated
+  explicitly. Failures never become permission to execute.
+
+### Following milestones
+
+1. **Runnable Kubernetes support example.** Reuse the existing real DSH
+   approval service for per-call decisions, show the target and proposed
+   mutation, and document the path from scoped diagnostics through shadow
+   observation to deliberate enforcement. Verify changed arguments, rejection,
+   cancellation, and missing approval input against the disposable cluster.
+2. **Repeatable comparison and adoption docs.** Add an opt-in cluster regression
+   command around the recorded replay, preserving the fast offline gate.
+   Document setup, cleanup, supported scope, and evidence limits. Compare
+   autonomous planners under matching instructions separately from replay so
+   safer planner choices are not attributed to an execution gate.
+
+### Later
+
 - Manual publish of workspace `0.1.2` (call-scoped assessment wording) to npm.
   `@buberlo/jev-core` and `@buberlo/dsh-jev` are already on the registry at
   `0.1.0`; a consumer can install the plugin alone and get that published

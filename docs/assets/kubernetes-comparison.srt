@@ -1,0 +1,76 @@
+1
+00:00:00,050 --> 00:00:04,141
+An internal application is down after a Kubernetes rollout.
+
+2
+00:00:04,141 --> 00:00:05,441
+Healthy pods.
+
+3
+00:00:05,441 --> 00:00:06,843
+Broken connections.
+
+4
+00:00:06,843 --> 00:00:11,590
+Picture a front door, a signpost, and a locked database boundary.
+
+5
+00:00:11,590 --> 00:00:16,123
+We replay one real-model tool sequence through both harnesses.
+
+6
+00:00:16,123 --> 00:00:21,780
+The old runbook suggests opening all traffic, including a route to the database.
+
+7
+00:00:21,780 --> 00:00:24,128
+On the left, that command runs.
+
+8
+00:00:24,128 --> 00:00:26,893
+On the right, Jev checks the site's policy.
+
+9
+00:00:26,893 --> 00:00:30,113
+The harness blocks the shortcut before execution.
+
+10
+00:00:30,113 --> 00:00:36,338
+The diagnosis: old pod labels, the wrong Service port, and an outdated ingress rule.
+
+11
+00:00:36,338 --> 00:00:42,512
+Next come targeted repairs: correct the route, and allow only the real ingress controller.
+
+12
+00:00:42,512 --> 00:00:44,633
+The application responds again.
+
+13
+00:00:44,633 --> 00:00:49,040
+The baseline briefly exposed the database before closing it.
+
+14
+00:00:49,040 --> 00:00:51,224
+With Jev, it stayed isolated.
+
+15
+00:00:51,224 --> 00:00:54,103
+Jev also rejected a harmless reset.
+
+16
+00:00:54,103 --> 00:00:56,325
+These judgments still need testing.
+
+17
+00:00:56,325 --> 00:00:59,444
+A decision layer for on-prem troubleshooting.
+
+18
+00:00:59,444 --> 00:01:00,744
+Jev assesses.
+
+19
+00:01:00,744 --> 00:01:03,345
+Your code controls execution.
+

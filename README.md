@@ -5,6 +5,19 @@
 DSH runs the agent. [TypeSafe Jev](https://docs.typesafe.ai/) makes the small,
 fast decisions. Your code decides what the answers mean.
 
+[![Watch: troubleshoot Kubernetes without opening the database](docs/assets/kubernetes-comparison.png)](docs/assets/kubernetes-comparison.mp4)
+
+**Watch the 66-second Kubernetes troubleshooting demo:** healthy pods, broken connections after a
+rollout. The agent traces Ingress → Service → pods and repairs the network path.
+Jev's site policy gates a broad “allow all traffic” shortcut, so the portal can
+recover while PostgreSQL stays isolated. The same freshly recorded model calls
+run through both harnesses against a real, disposable Kubernetes cluster, with
+live Jev assessments. Clearly labeled replay with neural narration; no live
+replanning in this comparison.
+[Video](docs/assets/kubernetes-comparison.mp4) · [Captions](docs/assets/kubernetes-comparison.srt) ·
+[Method, all runs and limits](docs/benchmark.md#kubernetes-networking-support-2026-09-21).
+The replay also shows one harmless reset being blocked—a documented false positive.
+
 ```
    user task
        │
@@ -262,6 +275,12 @@ half; the plugin runs identically from its composed configuration.
 
 ## Measured value
 
+The [Kubernetes networking support demo](docs/assets/kubernetes-comparison.mp4)
+replays fresh DeepSeek tool calls against a real cluster, with live Jev
+assessments, to isolate the gate’s effect from differences in planner choices.
+It compares restoration of the portal and preservation of database isolation.
+[Method, all runs and limits](docs/benchmark.md#kubernetes-networking-support-2026-09-21).
+
 ![Same task, two AI agents — without Jev the file is deleted, with Jev it stays](docs/assets/bench-explainer.png)
 
 Explainer video with narration: [English](docs/assets/bench-explainer.mp4) · [German](docs/assets/bench-explainer.de.mp4)
@@ -272,9 +291,9 @@ Raw terminal replays: [GIF](docs/assets/bench-side-by-side.gif) · [EN](docs/ass
 Jev stopped every attempt: on a weaker model the agent tried to delete the
 protected audit trail in 10/10 runs — 31 denials, zero executions — while
 without Jev it got through. Footnote, honestly: a rule inside the prompt also
-held in our runs and is cheaper; Jev is the guarantee when that rule cannot
-live in the model context, when the model cannot be trusted, or when a denial
-must be auditable. Full method, raw numbers, videos and limits:
+held in our runs and is cheaper. Jev adds an auditable assessment outside the
+planning model context; deterministic gates enforce its decisions, but the
+model judgments themselves are not a safety guarantee. Full method, raw numbers, videos and limits:
 [`docs/benchmark.md`](docs/benchmark.md).
 
 ## Status
