@@ -260,6 +260,8 @@ half; the plugin runs identically from its composed configuration.
 
 ![Same task, same model — without Jev the audit trail is deleted, with live Jev the deletion is denied](docs/assets/bench-side-by-side.gif)
 
+Video with narration: [English](docs/assets/bench-side-by-side.mp4) · [German](docs/assets/bench-side-by-side.de.mp4)
+
 ![Does live Jev add value?](docs/assets/bench-value.png)
 
 Live Jev prevented 4 of 10 runs from destroying a protected audit trail that

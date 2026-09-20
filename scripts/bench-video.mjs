@@ -194,11 +194,64 @@ const { mkdirSync } = await import('node:fs')
 mkdirSync(videoDir, { recursive: true })
 const castPath = join(videoDir, 'side-by-side.cast')
 writeFileSync(castPath, `${cast}\n`)
-const gifPath = join(root, 'docs', 'assets', 'bench-side-by-side.gif')
+
+const wantMp4 = process.argv.includes('--mp4')
+const speed = wantMp4 ? '1' : '1.6'
+const gifPath = wantMp4 ? join(videoDir, 'side-by-side.gif') : join(root, 'docs', 'assets', 'bench-side-by-side.gif')
 try {
-  execFileSync('agg', ['--quiet', '--speed', '1.6', '--font-size', '13', '--last-frame-duration', '4', castPath, gifPath], { stdio: 'pipe' })
-  console.log(`video: ${gifPath}\ncast:  ${castPath}`)
+  execFileSync('agg', ['--quiet', '--speed', speed, '--font-size', '13', '--last-frame-duration', '5', castPath, gifPath], { stdio: 'pipe' })
+  console.log(`render: ${gifPath}\ncast:   ${castPath}`)
 } catch (error) {
   console.log(`cast: ${castPath} (agg unavailable: ${error.message})`)
+  process.exit(0)
+}
+
+if (wantMp4) {
+  const assets = join(root, 'docs', 'assets')
+  const silent = join(videoDir, 'silent.mp4')
+  // Real H.264 MP4, even dimensions, broadly compatible pixel format.
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', gifPath,
+    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=15', '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart', '-c:v', 'libx264', '-crf', '20', silent], { stdio: 'pipe' })
+  const duration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', silent], { encoding: 'utf8' }).trim())
+
+  const narrations = {
+    de: {
+      voice: 'Anna',
+      text: 'Gleiche Aufgabe, gleiches Modell, zwei Harnesse. Links, ohne Jev: das Modell loescht den Audit-Trail. '
+        + 'Rechts, mit Live-Jev: derselbe Aufruf wird vor der Ausfuehrung abgelehnt. Nach zehn Laeufen: '
+        + 'viermal zerstoert ohne Jev, null von zehn mit Jev. Der Preis: rund anderthalb Sekunden pro Entscheidung, '
+        + 'bezahlt in Latenz, nicht in Daten.',
+      out: join(assets, 'bench-side-by-side.de.mp4'),
+    },
+    en: {
+      voice: 'Samantha',
+      text: 'Same task, same model, two harnesses. On the left, without Jev: the model deletes the audit trail. '
+        + 'On the right, with live Jev: the same call is denied before execution. After ten runs: '
+        + 'four destroyed without Jev, zero of ten with Jev. The cost: about one and a half seconds per decision, '
+        + 'paid in latency, not in data.',
+      out: join(assets, 'bench-side-by-side.mp4'),
+    },
+  }
+
+  for (const [lang, entry] of Object.entries(narrations)) {
+    const voice = join(videoDir, `voice-${lang}.aiff`)
+    try {
+      execFileSync('say', ['-v', entry.voice, '-o', voice, entry.text], { stdio: 'pipe' })
+    } catch (error) {
+      console.log(`mp4 ${lang}: narration failed (${error.message}); writing silent video`)
+      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-c', 'copy', entry.out], { stdio: 'pipe' })
+      continue
+    }
+    const voiceDuration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', voice], { encoding: 'utf8' }).trim())
+    // Hold the last frame until the narration ends so nothing is cut off.
+    const pad = Math.max(0, voiceDuration + 1 - duration)
+    const args = ['-y', '-loglevel', 'error', '-i', silent, '-i', voice]
+    if (pad > 0.05) args.push('-vf', `tpad=stop_mode=clone:stop_duration=${pad.toFixed(2)}`)
+    args.push('-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-shortest', entry.out)
+    execFileSync('ffmpeg', args, { stdio: 'pipe' })
+    const finalDuration = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', entry.out], { encoding: 'utf8' }).trim()
+    console.log(`mp4:   ${entry.out} (${Number(finalDuration).toFixed(1)} s, ${entry.voice})`)
+  }
 }
 console.log(`runs: left=base#${left.index} (deleted) · right=jev-guard#${right.index} (denied) · ${artifact.runs} runs per variant`)
