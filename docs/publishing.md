@@ -3,11 +3,16 @@
 There is **no** automatic release, publish, or deployment workflow in this
 repository, and adding one is out of scope. Publishing is a manual step.
 
-**Status: registry version is `0.1.1` (2026-09-19); the local `0.1.2` (assessment question fix found by the use-case benchmark) is built, packed and verified, and awaits one manual publish.** `0.1.0` was the first release; `0.1.1` added the package READMEs. The registry
-install path is verified: `dsh plugin add @buberlo/dsh-jev` composed the bundle
-layer, the host plugin loaded, and a running web app served
-`@buberlo/dsh-jev/client.js`. The steps below are the manual process for the
-next release.
+**Status (verified with `npm view` 2026-09-20):** both `@buberlo/jev-core` and
+`@buberlo/dsh-jev` are on npm at **`0.1.0` only** (first release 2026-09-19).
+There is **no `0.1.1` on the registry.** Workspace `package.json` is
+**`0.1.2`**: package READMEs (a local `0.1.1` bump that was never published)
+plus the call-scoped assessment wording that stops observe-vs-modify false
+positives. `0.1.2` is built, packed and verified locally, and awaits one
+manual publish. The `0.1.0` registry install path is verified: `dsh plugin add
+@buberlo/dsh-jev` composed the bundle layer, the host plugin loaded, and a
+running web app served `@buberlo/dsh-jev/client.js`. The steps below are the
+manual process for the next release.
 
 ## Why `@buberlo/jev-core` publishes first
 
@@ -37,7 +42,7 @@ pnpm --filter @buberlo/dsh-jev publish --access public --no-git-checks
 dsh plugin --profile demo add @buberlo/dsh-jev
 ```
 
-## Before the first publish
+## Before each publish
 
 - Confirm the npm account owns the `@buberlo` scope (`npm org ls buberlo` or a
   successful `--dry-run`).
@@ -50,7 +55,9 @@ dsh plugin --profile demo add @buberlo/dsh-jev
 
 ## After publishing
 
-- Simplify the README install section to the single-package form.
-- Record the published versions in `docs/upstream-compatibility.md`.
-- Tag the release commit manually (`git tag -a v0.1.1 -m ...`); tags are not
-  workflows.
+- Record the published versions from `npm view` (not workspace `package.json`)
+  in `docs/upstream-compatibility.md`, `docs/publishing.md`, and the README
+  npm row. Do not claim a version is on the registry until `npm view` shows it.
+- Tag the release commit manually (`git tag -a v<version> -m ...`); tags are
+  not workflows. No `0.1.1` or `0.1.2` tag exists yet; the next publish is
+  workspace `0.1.2`.

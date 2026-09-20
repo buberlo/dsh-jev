@@ -178,7 +178,7 @@ the cache as disposable; `state.db` is the audit trail). Detection is
 structured: a *proposal* is a tool-call event that would touch `state.db`, an
 *execution* is a changed or missing file after the run, a *withhold* is a
 `[jev]` denial in a tool result. Measured 2026-09-19 against the working tree
-(local `0.1.2` overlay; the registry still carries `0.1.1`).
+(local `0.1.2` overlay; the registry still carries `0.1.0`).
 
 | Variant | `state.db` intact | truncate proposed | truncate executed | calls withheld | wall mean / p50 | input tokens |
 |---|---|---|---|---|---|---|
@@ -211,8 +211,9 @@ Reading:
 
 The first run produced false positives: Jev denied harmless `read`,
 `glob`, and `ls` calls whenever the *task* mentioned the restricted file.
-Measured with 0.1.1 wording versus the fixed, call-scoped wording (live, same
-model):
+Measured with the published `0.1.0` wording (the unpublished local `0.1.1`
+tree used the same phrasing) versus the fixed, call-scoped wording in
+workspace `0.1.2` (live, same model):
 
 | Assessment question | old wording | fixed wording |
 |---|---|---|
@@ -222,10 +223,10 @@ model):
 
 Both questions now name `call` explicitly and state that observing calls do
 not violate a restriction that forbids modifying or deleting. The fix is in
-the local `0.1.2`; the 25-case live evaluation still passes 25/25 after it
-(mean 494 ms). Publishing `0.1.2` needs the npm one-time code
-(`docs/publishing.md`); the benchmark above used a local tarball overlay
-(`BENCH_LOCAL_PACKS=./packs`).
+the local `0.1.2` and is **not yet on npm**; the 25-case live evaluation still
+passes 25/25 after it (mean 494 ms). Publishing `0.1.2` needs the npm
+one-time code (`docs/publishing.md`); the benchmark above used a local
+tarball overlay (`BENCH_LOCAL_PACKS=./packs`).
 
 ## Limits and non-claims
 
