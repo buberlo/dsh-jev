@@ -21,7 +21,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -172,13 +172,14 @@ for (let index = 0; index < maxSteps; index += 1) {
 
 push(1.5, '')
 push(0.4, at(RESULT_ROW, 1, dim('─'.repeat(118))))
-push(0.6, at(RESULT_ROW + 1, 1, `${red(bold('state.db: DELETED'))}  —  ${red(`${leftExecuted}/${leftArtifact.runs} runs without Jev`)}`))
-push(0.8, at(RESULT_ROW + 2, 1, `${green(bold('state.db: KEPT'))}   —  ${green(`${guardExecuted}/${guardRuns} runs with Jev`)}`))
-push(0.6, at(RESULT_ROW + 3, 1, `${green(bold('Jev stopped every attempt:'))} the model tried to delete it in ${guardVariant.withheld}/${guardRuns} runs — ${deniedAttempts} denials, zero executions, noul≈0.98.`))
+push(0.6, at(RESULT_ROW + 1, 1, `${red(bold('FILE GONE'))}   —  ${red(`without Jev the robot deleted it in ${leftExecuted} of ${leftArtifact.runs} runs`)}`))
+push(0.8, at(RESULT_ROW + 2, 1, `${green(bold('FILE SAFE'))}   —  ${green(`with Jev it survived all ${guardRuns} runs`)}`))
+push(0.6, at(RESULT_ROW + 3, 1, `${green(bold(`Jev said NO ${deniedAttempts} times.`))} The robot tried to delete it in ${guardVariant.withheld}/${guardRuns} runs and never got through.`))
 push(0.6, at(RESULT_ROW + 4, 1, policy === undefined
   ? 'Footnote, honestly: a rule inside the prompt also held in our runs. Jev is the guarantee when that rule cannot live in the model context.'
   : `Footnote, honestly: the same rule inside the prompt also held (${policy.executed}/${guardRuns} deletions) and is cheaper — Jev is the guarantee, not a speed-up.`))
-push(0.6, at(RESULT_ROW + 5, 1, `${green(bold(`Bottom line: without Jev the model got through ${leftExecuted} times; with Jev: 0.`))} Deterministic, auditable, independent of the model.`))
+push(0.6, at(RESULT_ROW + 5, 1, `${green(bold('Simple version:'))} Jev is the rule that never forgets, even when the robot wants to break it.`))
+push(0.6, at(RESULT_ROW + 6, 1, dim('Numbers: without Jev the model got through ${leftExecuted} times; with Jev 0 — deterministic, auditable, independent of the model.')))
 push(0.6, at(RESULT_ROW + 6, 1, dim('Cost: mock Jev ≈ 0 ms/turn · Jev ≈ +4.6 s/turn — paid in latency, not in data.')))
 push(0.6, at(RESULT_ROW + 7, 1, dim(`Replay of recorded runs (${leftArtifact.when.slice(0, 10)}) · method: docs/benchmark.md`)))
 push(6, '')
@@ -210,35 +211,40 @@ if (wantMp4) {
 
   const narrations = {
     de: {
-      voice: 'Anna',
+      voice: 'de-DE-KatjaNeural',
       out: join(assets, 'bench-side-by-side.de.mp4'),
-      text: 'Gleiche Aufgabe, zwei Harnesse. Ohne Jev loescht das Modell den Audit-Trail. Mit Jev hat es in jedem Lauf versucht '
-        + 'zu loeschen, und jeder Versuch wurde vor der Ausfuehrung gestoppt: einunddreissig Ablehnungen, null Ausfuehrungen. '
-        + 'Eine ehrliche Fussnote: eine Regel im Prompt hat in unseren Laeufen ebenfalls gehalten und ist billiger. Jev ist die '
-        + 'Garantie fuer den Fall, dass die Regel nicht in den Modellkontext darf, dass dem Modell nicht zu trauen ist, oder dass '
-        + 'eine Ablehnung nachvollziehbar protokolliert werden muss. Der Preis: rund anderthalb Sekunden pro Entscheidung, '
-        + 'bezahlt in Latenz, nicht in Daten.',
+      text: 'Zwei Roboter, derselbe Auftrag: aufraeumen und state.db loeschen. Ein Roboter hat Jev. Jev ist eine strenge Regel: '
+        + 'Fass das Audit-Trail nie an. Der andere Roboter hat kein Jev. Schau. Ohne Jev loescht der Roboter die Datei. Mit Jev '
+        + 'versucht er es, aber Jev sagt nein. Jedes Mal. Zehn Versuche, null Loeschungen. Das ist die Idee: Jev ist die Regel, '
+        + 'die nie vergisst, auch wenn der Roboter sie brechen will.',
     },
     en: {
-      voice: 'Samantha',
+      voice: 'en-US-JennyNeural',
       out: join(assets, 'bench-side-by-side.mp4'),
-      text: 'Same task, two harnesses. Without Jev, the model deletes the audit trail. With Jev, it tried to delete it in every '
-        + 'run and every attempt was stopped before execution: thirty one denials, zero executions. One honest footnote: a rule '
-        + 'inside the prompt also held in our runs, and is cheaper. Jev is the guarantee for when that rule cannot live in the '
-        + 'model context, when the model cannot be trusted, or when the denial has to be auditable. The cost: about one and a '
-        + 'half seconds per decision, paid in latency, not in data.',
+      text: 'Two robots, same job: clean up and delete state.db. One robot has Jev. Jev is a strict rule: never touch the audit '
+        + 'trail. The other robot has no Jev. Watch. Without Jev, the robot deletes the file. With Jev, the robot tries to delete '
+        + 'it, but Jev says no. Every time. Ten tries, zero deletions. That is the idea: Jev is the rule that never forgets, even '
+        + 'when the robot wants to break it.',
     },
   }
 
   for (const [lang, entry] of Object.entries(narrations)) {
-    const voice = join(videoDir, `voice-${lang}.aiff`)
+    const edgeTts = process.env.EDGE_TTS ?? '/tmp/ttsvenv/bin/edge-tts'
+    const voice = join(videoDir, `voice-${lang}.mp3`)
+    let narrated = true
     try {
-      execFileSync('say', ['-v', entry.voice, '-o', voice, entry.text], { stdio: 'pipe' })
-    } catch (error) {
-      console.log(`mp4 ${lang}: narration failed (${error.message}); writing silent video`)
-      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-c', 'copy', entry.out], { stdio: 'pipe' })
-      continue
+      execFileSync(edgeTts, ['--voice', entry.voice, '--text', entry.text, '--write-media', voice], { stdio: 'pipe' })
+    } catch {
+      try {
+        execFileSync('say', ['-v', entry.voice.split('-').at(-1).replace('Neural', ''), '-o', voice.replace('.mp3', '.aiff'), entry.text], { stdio: 'pipe' })
+      } catch (error) {
+        console.log(`mp4 ${lang}: narration failed (${error.message}); writing silent video`)
+        execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-c', 'copy', entry.out], { stdio: 'pipe' })
+        narrated = false
+      }
     }
+    if (!narrated) continue
+    if (!existsSync(voice)) continue
     const voiceDuration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', voice], { encoding: 'utf8' }).trim())
     const pad = Math.max(0, voiceDuration + 1 - duration)
     const args = ['-y', '-loglevel', 'error', '-i', silent, '-i', voice]
