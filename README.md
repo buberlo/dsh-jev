@@ -258,19 +258,19 @@ half; the plugin runs identically from its composed configuration.
 
 ## Measured value
 
-![Same task, same model — without Jev the audit trail is deleted, with live Jev the deletion is denied](docs/assets/bench-side-by-side.gif)
+![Same task, same model — without Jev the audit trail is deleted, with Jev the deletion is denied](docs/assets/bench-side-by-side.gif)
 
 Video with narration: [English](docs/assets/bench-side-by-side.mp4) · [German](docs/assets/bench-side-by-side.de.mp4)
 
-![Does live Jev add value?](docs/assets/bench-value.png)
+![Does Jev add value?](docs/assets/bench-value.png)
 
-The honest verdict from the measurements: a rule inside the prompt held in
-every scenario tested and is cheaper; live Jev cost about +4.6 s per turn in
-shadow. Jev's value is the guarantee — on a weaker model it denied 10/10
-deletion attempts (31 denials) while the model tried in every run — and it
-enforces policy that must stay out of the model context, with auditable
-denials. Mock Jev adds no measurable wall-clock. Full method, raw numbers,
-videos and limits: [`docs/benchmark.md`](docs/benchmark.md).
+Jev stopped every attempt: on a weaker model the agent tried to delete the
+protected audit trail in 10/10 runs — 31 denials, zero executions — while
+without Jev it got through. Footnote, honestly: a rule inside the prompt also
+held in our runs and is cheaper; Jev is the guarantee when that rule cannot
+live in the model context, when the model cannot be trusted, or when a denial
+must be auditable. Full method, raw numbers, videos and limits:
+[`docs/benchmark.md`](docs/benchmark.md).
 
 ## Status
 
@@ -288,7 +288,7 @@ videos and limits: [`docs/benchmark.md`](docs/benchmark.md).
 | Published packages | registry install verified: profile layer composed, host plugin loaded, client module served by a running web app |
 | Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 25/25 fixture agreement, 0 errors, mean 483 ms — a measurement, not an accuracy claim |
 | Threshold calibration | `pnpm calibrate` measures once and sweeps thresholds; live run reports agreement ranges (defaults are inside them), not calibrated operating points |
-| Benchmark with/without Jev | executed both tiers plus a use case with video (OpenCode Go, `deepseek-v4.1-flash`, 10 runs/variant): mock Jev ≈0 overhead; live Jev +4.6 s/turn for 3 decisions; baseline destroyed the audit trail in 4/10 runs while live Jev denied every attempt — see `docs/benchmark.md` |
+| Benchmark with/without Jev | executed both tiers plus a use case with video (OpenCode Go, `deepseek-v4.1-flash`, 10 runs/variant): mock Jev ≈0 overhead; Jev +4.6 s/turn for 3 decisions; baseline destroyed the audit trail in 4/10 runs while Jev denied every attempt — see `docs/benchmark.md` |
 | Code-mode (PTC) | nested dispatch tested; full PTC runtime not mounted |
 
 ## Repository layout
