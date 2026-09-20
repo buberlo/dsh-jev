@@ -67,57 +67,63 @@ const clip = (text, width) => {
   return flat.length <= width ? flat : `${flat.slice(0, width - 1)}…`
 }
 
-function displayLines(file, limit, width) {
+/** Turn recorded events into plain-language story lines (real events only). */
+function storyLines(file, limit, width, closing) {
   const lines = []
+  let deniedSoFar = false
+  const clipText = (text, width) => {
+    const flat = String(text).replace(/\s+/g, ' ').trim()
+    return flat.length <= width ? flat : `${flat.slice(0, width - 1)}…`
+  }
+  const plainAction = (tool, args) => {
+    const path = String(args.file_path ?? args.path ?? '')
+    const base = path.split('/').filter(Boolean).pop() ?? 'a file'
+    if (tool === 'read') return `AI reads ${base}`
+    if (tool === 'write' || tool === 'edit') return `AI writes ${base}`
+    if (tool === 'glob') return 'AI looks for files'
+    if (tool === 'grep') return 'AI searches inside files'
+    if (tool === 'bash' || tool === 'pwsh') {
+      const command = String(args.command ?? '')
+      if (/\brm\b/.test(command) && command.includes('state.db')) return 'AI runs the DELETE command for state.db'
+      if (/\bls\b|\bfile\b|\bstat\b|\bod \b|xxd/.test(command)) return 'AI checks the folder and the file'
+      return 'AI runs a shell command'
+    }
+    return `AI uses ${tool}`
+  }
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     let event
     try { event = JSON.parse(line) } catch { continue }
-    switch (event.type) {
-      case 'thinking': {
-        const prefix = '· thinking: "'
-        lines.push({ text: `${prefix}${clip(event.text, width - prefix.length - 1)}"`, color: 'dim' })
-        break
+    if (event.type === 'thinking') {
+      lines.push({ text: `AI thinks: "${clipText(event.text, width - 14)}"`, kind: 'think' })
+    } else if (event.type === 'tool_call') {
+      lines.push({ text: clipText(plainAction(String(event.tool ?? ''), event.input ?? {}), width), kind: 'action' })
+    } else if (event.type === 'tool_result') {
+      const result = String(event.result ?? '')
+      if (result.includes('[jev]')) {
+        deniedSoFar = true
+        const noul = /noul=([\d.]+)/.exec(result)?.[1] ?? '?'
+        const rule = /assessment\.restriction-violation/.test(result) ? 'rule: never delete the audit trail' : 'policy rule'
+        lines.push({ text: clipText(`JEV STOPS IT — ${rule} (p=${noul})`, width), kind: 'stop' })
+      } else if (deniedSoFar && result.includes('state.db')) {
+        lines.push({ text: 'state.db is still there', kind: 'state' })
       }
-      case 'tool_call': {
-        const args = event.input ?? {}
-        const detail = args.command ?? args.file_path ?? args.pattern ?? ''
-        const prefix = `→ ${event.tool}  `
-        lines.push({ text: `${prefix}${clip(detail, width - prefix.length)}`, color: 'plain' })
-        break
-      }
-      case 'tool_result': {
-        const result = String(event.result ?? '')
-        if (result.includes('[jev]')) {
-          const noul = /noul=([\d.]+)/.exec(result)
-          lines.push({ text: `✗ DENIED by Jev${noul === null ? '' : ` (noul=${noul[1]})`}`, color: 'deny' })
-        } else {
-          lines.push({ text: `✓ ${clip(result.split('\n')[0], width - 2)}`, color: 'ok' })
-        }
-        break
-      }
-      case 'text':
-        lines.push({ text: `“${clip(event.text, width - 2)}”`, color: 'plain', kind: 'text' })
-        break
-      case 'final':
-        lines.push({ text: `■ "${clip(event.text, width - 4)}"`, color: 'final' })
-        break
-      default:
-        break
+    } else if (event.type === 'final') {
+      lines.push({ text: `AI says: "${clipText(event.text, width - 12)}"`, kind: 'final' })
     }
   }
-  for (let index = lines.length - 2; index >= 0; index -= 1) {
-    if (lines[index].kind === 'text' && lines[index + 1].text.startsWith('■')) lines.splice(index, 1)
-  }
+  lines.push({ text: clipText(closing, width), kind: 'close' })
   if (lines.length <= limit) return lines
   const head = lines.slice(0, Math.ceil(limit / 2))
   const tail = lines.slice(-(limit - head.length))
-  return [...head, { text: `  … ${lines.length - limit} more events …`, color: 'dim' }, ...tail]
+  return [...head, { text: `  … ${lines.length - limit} events skipped …`, kind: 'think' }, ...tail]
 }
 
 const MAX_ROWS = 18
 const COL2 = 62
-const leftLines = displayLines(join(results, 'usecase', 'base', `run-${leftIndex}.jsonl`), MAX_ROWS, COL2 - 3)
-const rightLines = displayLines(join(results, 'usecase', 'jev-guard', `run-${rightIndex}.jsonl`), MAX_ROWS, 118 - COL2)
+const leftLines = storyLines(join(results, 'usecase', 'base', `run-${leftIndex}.jsonl`), MAX_ROWS, COL2 - 3,
+  `END: state.db is GONE — deleted in ${leftExecuted} of ${leftArtifact.runs} runs without Jev`)
+const rightLines = storyLines(join(results, 'usecase', 'jev-guard', `run-${rightIndex}.jsonl`), MAX_ROWS, 118 - COL2,
+  `END: state.db is SAFE — Jev stopped ${deniedAttempts} attempts, 0 executions`)
 
 const HEADER_ROWS = 7
 const RESULT_ROW = HEADER_ROWS + MAX_ROWS + 2
@@ -127,11 +133,13 @@ const bold = (text) => `\u001b[1m${text}\u001b[0m`
 const red = (text) => `\u001b[31m${text}\u001b[0m`
 const green = (text) => `\u001b[32m${text}\u001b[0m`
 const paint = (line) => {
-  switch (line.color) {
-    case 'dim': return dim(line.text)
-    case 'deny': return red(line.text)
-    case 'ok': return green(line.text)
+  switch (line.kind) {
+    case 'think': return dim(line.text)
+    case 'action': return line.text
+    case 'stop': return red(bold(line.text))
+    case 'state': return green(line.text)
     case 'final': return bold(line.text)
+    case 'close': return green(bold(line.text))
     default: return line.text
   }
 }
@@ -197,7 +205,7 @@ if (!wantMp4) {
   const castPath = join(videoDir, 'side-by-side.cast')
   writeCast(castPath, buildCast({ intro, step, tail: 6, banner }))
   try {
-    execFileSync('agg', ['--quiet', '--speed', '1.6', '--font-size', '13', '--last-frame-duration', '4', castPath, join(root, 'docs', 'assets', 'bench-side-by-side.gif')], { stdio: 'pipe' })
+    execFileSync('agg', ['--quiet', '--speed', '1.6', '--font-size', '15', '--last-frame-duration', '4', castPath, join(root, 'docs', 'assets', 'bench-side-by-side.gif')], { stdio: 'pipe' })
     console.log('gif: docs/assets/bench-side-by-side.gif')
   } catch (error) {
     console.log(`cast: ${castPath} (agg unavailable: ${error.message})`)
@@ -252,7 +260,7 @@ if (!wantMp4) {
     const castPath = join(videoDir, `side-by-side-${lang}.cast`)
     const gifPath = join(videoDir, `side-by-side-${lang}.gif`)
     writeCast(castPath, buildCast({ intro, step, tail, banner }))
-    execFileSync('agg', ['--quiet', '--font-size', '13', '--last-frame-duration', '1', castPath, gifPath], { stdio: 'pipe' })
+    execFileSync('agg', ['--quiet', '--font-size', '15', '--last-frame-duration', '1', castPath, gifPath], { stdio: 'pipe' })
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', gifPath,
       '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=15', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
       '-c:v', 'libx264', '-crf', '20', silentFor(lang)], { stdio: 'pipe' })

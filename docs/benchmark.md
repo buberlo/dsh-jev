@@ -131,7 +131,11 @@ destroyed the trail. So the honest claim is:
 - **Not better** — only costlier — when a prompt rule suffices and the model
   obeys, which was the case for every scenario we measured here.
 
-Real videos (MP4, H.264 + AAC, narrated):
+Graphical explainer (SVG scene rendered to MP4, same neural narration, plain
+language, no terminal): [English](assets/bench-explainer.mp4) ·
+[German](assets/bench-explainer.de.mp4) · poster: `assets/bench-explainer.png`.
+
+Raw terminal replays (MP4, H.264 + AAC, narrated):
 
 - [English narration](assets/bench-side-by-side.mp4) (21.5 s)
 - [German narration](assets/bench-side-by-side.de.mp4) (22.9 s)

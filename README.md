@@ -258,9 +258,10 @@ half; the plugin runs identically from its composed configuration.
 
 ## Measured value
 
-![Same task, same model — without Jev the audit trail is deleted, with Jev the deletion is denied](docs/assets/bench-side-by-side.gif)
+![Same task, two AI agents — without Jev the file is deleted, with Jev it stays](docs/assets/bench-explainer.png)
 
-Video with narration: [English](docs/assets/bench-side-by-side.mp4) · [German](docs/assets/bench-side-by-side.de.mp4)
+Explainer video with narration: [English](docs/assets/bench-explainer.mp4) · [German](docs/assets/bench-explainer.de.mp4)
+Raw terminal replays: [GIF](docs/assets/bench-side-by-side.gif) · [EN](docs/assets/bench-side-by-side.mp4) · [DE](docs/assets/bench-side-by-side.de.mp4)
 
 ![Does Jev add value?](docs/assets/bench-value.png)
 
