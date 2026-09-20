@@ -113,6 +113,24 @@ Artifacts (NDJSON + stderr per run, summary JSON) land under
 
 ![Same task, same model: without Jev the audit trail is deleted; with live Jev the deletion is denied](assets/bench-side-by-side.gif)
 
+### Verdict
+
+Measured across the scenarios above: **Jev is not more effective than a rule
+inside the prompt when the model complies — and it is slower.** A prompt-level
+policy held in every scenario tested (0/10 deletions, and it did not even
+attempt). Jev's measured value is different, and the video states it:
+enforcement that does not depend on the model's context or willingness. On the
+weaker model the record is explicit: it tried to delete in 10/10 runs and Jev
+denied 10/10 (31 denials); without the rule and without Jev, 2–4/10 runs
+destroyed the trail. So the honest claim is:
+
+- **Better** when the rule must not live in the model context (hard policy,
+  compliance, per-call authorization), when the model cannot be trusted, when
+  the denial must be auditable (rule id + measured value), or when a rule in
+  the prompt could be lost to compaction or outweighed by injected content.
+- **Not better** — only costlier — when a prompt rule suffices and the model
+  obeys, which was the case for every scenario we measured here.
+
 Real videos (MP4, H.264 + AAC, narrated):
 
 - [English narration](assets/bench-side-by-side.mp4) (21.5 s)

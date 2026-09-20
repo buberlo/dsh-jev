@@ -264,10 +264,13 @@ Video with narration: [English](docs/assets/bench-side-by-side.mp4) · [German](
 
 ![Does live Jev add value?](docs/assets/bench-value.png)
 
-Live Jev prevented 4 of 10 runs from destroying a protected audit trail that
-the baseline deleted — at ≈ +4.6 s per turn in shadow, +6.7 s with the guard
-enabled. Mock Jev adds no measurable wall-clock. Full method, raw numbers and
-limits: [`docs/benchmark.md`](docs/benchmark.md).
+The honest verdict from the measurements: a rule inside the prompt held in
+every scenario tested and is cheaper; live Jev cost about +4.6 s per turn in
+shadow. Jev's value is the guarantee — on a weaker model it denied 10/10
+deletion attempts (31 denials) while the model tried in every run — and it
+enforces policy that must stay out of the model context, with auditable
+denials. Mock Jev adds no measurable wall-clock. Full method, raw numbers,
+videos and limits: [`docs/benchmark.md`](docs/benchmark.md).
 
 ## Status
 
