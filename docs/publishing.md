@@ -3,16 +3,32 @@
 There is **no** automatic release, publish, or deployment workflow in this
 repository, and adding one is out of scope. Publishing is a manual step.
 
-**Status (verified with `npm view` 2026-09-20):** both `@buberlo/jev-core` and
-`@buberlo/dsh-jev` are on npm at **`0.1.0` only** (first release 2026-09-19).
-There is **no `0.1.1` on the registry.** Workspace `package.json` is
-**`0.1.2`**: package READMEs (a local `0.1.1` bump that was never published)
-plus the call-scoped assessment wording that stops observe-vs-modify false
-positives. `0.1.2` is built, packed and verified locally, and awaits one
-manual publish. The `0.1.0` registry install path is verified: `dsh plugin add
-@buberlo/dsh-jev` composed the bundle layer, the host plugin loaded, and a
-running web app served `@buberlo/dsh-jev/client.js`. The steps below are the
-manual process for the next release.
+**Status (`npm view` 2026-09-23):** both `@buberlo/jev-core` and
+`@buberlo/dsh-jev` list **`0.1.0`, `0.1.2`, `0.1.3`, and `0.1.4`**. There is
+no `0.1.1`. Dist-tag `latest` is **`0.1.4`** for both. Workspace
+`package.json` is **`0.1.4`**.
+
+`@buberlo/dsh-jev@0.1.2` was packed with npm rather than pnpm, so the
+published tarball still depends on `@buberlo/jev-core` with a literal
+`workspace:^`. `npm install @buberlo/dsh-jev@0.1.2` fails with
+`EUNSUPPORTEDPROTOCOL`. The downloaded `@buberlo/dsh-jev@0.1.3` tarball has
+the same literal `workspace:^` and fails the same way. Do not recommend
+either plugin version. `@buberlo/jev-core@0.1.2` and `@buberlo/jev-core@0.1.3`
+do install (`@typesafe-ai/sdk@0.6.0`).
+
+`0.1.3` was abandoned. A granular bypass-2FA token stages versions, and
+republish of the staged version is rejected with E409 ("Cannot publish over
+previously staged version"). The publish that replaced it is **`0.1.4`**.
+`npm install @buberlo/dsh-jev@0.1.4` succeeds and resolves
+`@buberlo/jev-core@0.1.4` (`^0.1.4`). That is a package install, not a rerun
+of the DSH profile boot.
+
+The `0.1.0` profile path was verified when that was the only version:
+`dsh plugin add @buberlo/dsh-jev` composed the bundle layer, the host plugin
+loaded, and a running web app served `@buberlo/dsh-jev/client.js`. That
+profile boot has not been repeated for `0.1.4`. The steps below stay the
+manual process for a future release. Pack and publish with pnpm so
+`workspace:` is rewritten.
 
 ## Why `@buberlo/jev-core` publishes first
 
@@ -38,8 +54,9 @@ pnpm --filter @buberlo/dsh-jev publish --dry-run --access public --no-git-checks
 pnpm --filter @buberlo/jev-core publish --access public --no-git-checks
 pnpm --filter @buberlo/dsh-jev publish --access public --no-git-checks
 
-# 4. Verify the consumed form.
-dsh plugin --profile demo add @buberlo/dsh-jev
+# 4. Verify the consumed form of the version just published.
+#    Pin it. 0.1.2 and 0.1.3 of @buberlo/dsh-jev do not install.
+dsh plugin --profile demo add @buberlo/dsh-jev@<version>
 ```
 
 ## Before each publish
@@ -59,5 +76,5 @@ dsh plugin --profile demo add @buberlo/dsh-jev
   in `docs/upstream-compatibility.md`, `docs/publishing.md`, and the README
   npm row. Do not claim a version is on the registry until `npm view` shows it.
 - Tag the release commit manually (`git tag -a v<version> -m ...`); tags are
-  not workflows. No `0.1.1` or `0.1.2` tag exists yet; the next publish is
-  workspace `0.1.2`.
+  not workflows. No `0.1.1`, `0.1.2`, `0.1.3`, or `0.1.4` git tag exists yet.
+  The published npm line is `0.1.4`. Do not republish `0.1.2` or `0.1.3`.

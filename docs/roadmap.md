@@ -47,8 +47,10 @@ Nothing here is a promise of a release.
   category membership, all-restricted catalogs, below-threshold picks, task
   mismatch, risk-score non-gating) and a threshold calibration sweep
   (`pnpm calibrate`) with a first live measurement.
-- Registry distribution: `dsh plugin add @buberlo/dsh-jev` verified end to end
-  (profile layer, host load, served client module).
+- Registry distribution: `dsh plugin add @buberlo/dsh-jev` at `0.1.0` verified
+  end to end (profile layer, host load, served client module). Later registry
+  copies of the plugin (`0.1.2`, `0.1.3`) do not install (`workspace:^`); see
+  the publish note below.
 - Benchmark harness: deterministic with/without-Jev comparison executed
   (`pnpm bench:compare`), the CLI A/B harness executed against OpenCode Go
   (`deepseek-v4.1-flash`, 10 runs/variant), and a use-case measurement with
@@ -84,11 +86,17 @@ Nothing here is a promise of a release.
   npm (it imports renderer `src/` paths the published renderer does not ship),
   so the browser tests exercise `apply()` and the component directly.
 - **Live provider**: fully implemented, not executed here (no credentials).
-- **Published on npm at `0.1.0` only** (2026-09-19). Local `0.1.1` added
-  package READMEs but was never published. Workspace `0.1.2` fixes the
-  assessment question wording measured by the use case (read false positives)
-  and needs one manual publish (`docs/publishing.md`), intentionally without
-  release automation.
+- **Registry line is `0.1.4`.** `npm view` 2026-09-23 lists `0.1.0`,
+  `0.1.2`, `0.1.3`, and `0.1.4`; `latest` is `0.1.4` for both packages,
+  matching the workspace. Local `0.1.1` added package READMEs and was never
+  published. Workspace `0.1.2` fixed the assessment question wording measured
+  by the use case (read false positives). `@buberlo/dsh-jev@0.1.2` on npm
+  still has a literal `workspace:^` dependency and does not install; do not
+  recommend it. `0.1.3` was abandoned after a granular bypass-2FA token
+  staged it (E409), and the visible `0.1.3` plugin tarball has the same
+  `workspace:^` break. `0.1.4` replaced it: `npm install @buberlo/dsh-jev@0.1.4`
+  resolves `@buberlo/jev-core@^0.1.4`. The DSH profile boot was verified for
+  `0.1.0` only. Publish stays manual (`docs/publishing.md`).
 - **Thresholds are uncalibrated defaults**; `pnpm calibrate` now reports the
   region they sit in, but the 25-case sample cannot separate values inside it.
   Real calibration needs labeled cases per consequence class. The on-prem
@@ -120,10 +128,6 @@ Nothing here is a promise of a release.
 
 ### Later
 
-- Manual publish of workspace `0.1.2` (call-scoped assessment wording) to npm.
-  `@buberlo/jev-core` and `@buberlo/dsh-jev` are already on the registry at
-  `0.1.0`; a consumer can install the plugin alone and get that published
-  core transitively. `0.1.2` is not on npm yet.
 - Labeled calibration corpus with enough cases per consequence class to narrow
   the reported threshold ranges.
 - Per-category pre-selection with a documented second-stage ranking for very

@@ -1,6 +1,6 @@
 {
   "name": "@buberlo/dsh-jev",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Jev-powered decision layer plugin for DeepSeek Harness",
   "license": "MIT",
   "type": "module",

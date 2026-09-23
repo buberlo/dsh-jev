@@ -120,23 +120,32 @@ network.
 
 ## 6. Install the plugin into a DSH profile
 
+Current registry release is workspace `0.1.4` (`latest` for both packages,
+`npm view` 2026-09-23). `npm install @buberlo/dsh-jev@0.1.4` succeeds and
+pulls `@buberlo/jev-core@0.1.4`. Pin the version. `@buberlo/dsh-jev@0.1.2`
+and `@0.1.3` still depend on `@buberlo/jev-core` with a literal
+`workspace:^` (packed with npm, not pnpm); `npm install` of either fails
+with `EUNSUPPORTEDPROTOCOL`. Do not recommend them. `0.1.3` was abandoned
+after a granular bypass-2FA token staged it (E409). The `dsh` profile boot
+(layer, host plugin, served client) was verified for `0.1.0` on 2026-09-19
+and has not been repeated for this `0.1.4` command.
+
 ```sh
-dsh plugin --profile demo add @buberlo/dsh-jev
+dsh plugin --profile demo add @buberlo/dsh-jev@0.1.4
 dsh --profile demo --dump-config | grep -A 2 'buberlo'
 ```
 
-Building from a checkout instead (workspace `0.1.2`, not yet on npm). Pack
-**both** tarballs: the unpublished assessment wording lives in
-`@buberlo/jev-core`, and a plugin-only tarball still pulls `jev-core@0.1.0`
-from the registry:
+Building from a checkout of workspace `0.1.4` instead. Pack **both**
+tarballs with pnpm so `workspace:` is rewritten:
 
 ```sh
 pnpm build
 pnpm --filter @buberlo/jev-core pack --pack-destination ./packs
 pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-dsh plugin --profile demo add ./packs/buberlo-dsh-jev-0.1.2.tgz
-# overlay packs/buberlo-jev-core-0.1.2.tgz on the profile
+dsh plugin --profile demo add ./packs/buberlo-dsh-jev-0.1.4.tgz
+# overlay packs/buberlo-jev-core-0.1.4.tgz on the profile
 # (see BENCH_LOCAL_PACKS in docs/benchmark.md)
+dsh --profile demo --dump-config | grep -A 2 'buberlo'
 ```
 
 You should see a `# == @buberlo/dsh-jev` layer with one `jev` row. The plugin

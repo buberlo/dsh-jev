@@ -44,7 +44,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | | |
 |---|---|
 | Packages | `@buberlo/jev-core` (harness-independent) · `@buberlo/dsh-jev` (DSH plugin/bundle) |
-| npm | both published at `0.1.0` only (2026-09-19; registry install verified with `dsh plugin add`). Workspace is `0.1.2` (call-scoped assessment wording **not yet on npm**). |
+| npm | `npm view` 2026-09-23 lists `0.1.0`, `0.1.2`, `0.1.3`, and `0.1.4`. Dist-tag `latest` is `0.1.4` for both packages. Workspace is `0.1.4`. `npm install @buberlo/dsh-jev@0.1.4` resolves `@buberlo/jev-core@^0.1.4`. Do not install `@buberlo/dsh-jev@0.1.2` or `@0.1.3` (literal `workspace:^`, `EUNSUPPORTEDPROTOCOL`). `0.1.3` was abandoned after a staged-version conflict (E409). |
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
@@ -154,23 +154,32 @@ Details and design notes: [`docs/use-cases.md`](docs/use-cases.md).
 
 ## Install into a DSH profile
 
-Both packages are on npm:
+Current registry release is `0.1.4` (`latest` for both packages, `npm view`
+2026-09-23). `npm install @buberlo/dsh-jev@0.1.4` succeeds and pulls
+`@buberlo/jev-core@0.1.4` (`^0.1.4`, rewritten by pnpm). The full DSH profile
+boot was verified for `0.1.0` on 2026-09-19 and has not been repeated for
+`0.1.4`.
 
 ```sh
-dsh plugin --profile <name> add @buberlo/dsh-jev
+dsh plugin --profile <name> add @buberlo/dsh-jev@0.1.4
 dsh --profile <name> --dump-config   # shows the "# == @buberlo/dsh-jev" layer
 ```
 
-For an unreleased checkout (workspace `0.1.2`), pack **both** tarballs. The
-assessment wording fix lives in `@buberlo/jev-core`; a plugin-only tarball
-still resolves `jev-core@0.1.0` from npm:
+Do not install `@buberlo/dsh-jev@0.1.2` or `@0.1.3`. Those tarballs still
+contain `"@buberlo/jev-core": "workspace:^"` (packed with npm, not pnpm).
+`npm install` fails with `EUNSUPPORTEDPROTOCOL`. `0.1.3` was abandoned: a
+granular bypass-2FA token staged the version, and republish returns E409.
+`0.1.4` is the publish that replaced it. Workspace `package.json` is `0.1.4`.
+
+A checkout packs the same version. Use pnpm so `workspace:` is rewritten:
 
 ```sh
 pnpm --filter @buberlo/jev-core pack --pack-destination ./packs
 pnpm --filter @buberlo/dsh-jev pack --pack-destination ./packs
-dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.2.tgz
-# overlay packs/buberlo-jev-core-0.1.2.tgz on the profile
+dsh plugin --profile <name> add ./packs/buberlo-dsh-jev-0.1.4.tgz
+# overlay packs/buberlo-jev-core-0.1.4.tgz on the profile
 # (see BENCH_LOCAL_PACKS in docs/benchmark.md)
+dsh --profile <name> --dump-config   # shows the "# == @buberlo/dsh-jev" layer
 ```
 
 The bundle inserts one row; configure it by overriding that row's `config`:
@@ -309,7 +318,7 @@ model judgments themselves are not a safety guarantee. Full method, raw numbers,
 | Skill routing + vendored TypeSafe skill | tested against the real filesystem provider |
 | Web client configuration page | implemented (bundle-keyed Plugins page); settings write and card interactions tested; module served by a running web app |
 | Real `dsh` CLI profile/loader | verified (see `docs/upstream-compatibility.md`) |
-| Published packages | npm `0.1.0` only; registry install verified (profile layer, host plugin, served client). Workspace `0.1.2` is unpublished. |
+| Published packages | `npm view` 2026-09-23: `0.1.0`, `0.1.2`, `0.1.3`, `0.1.4`; `latest` is `0.1.4`. `@buberlo/dsh-jev@0.1.4` installs with `@buberlo/jev-core@^0.1.4`. Plugin `@0.1.2` and `@0.1.3` are broken (`workspace:^`) and must not be installed. `0.1.3` abandoned (staged E409). End-to-end `dsh` profile install was verified for `0.1.0` (2026-09-19), not re-run for `0.1.4`. |
 | Live TypeSafe API | executed 2026-09-19 (`jev-1.13.0`): 25/25 fixture agreement, 0 errors, mean 483 ms — a measurement, not an accuracy claim |
 | Threshold calibration | `pnpm calibrate` measures once and sweeps thresholds; live run reports agreement ranges (defaults are inside them), not calibrated operating points |
 | Benchmark with/without Jev | executed both tiers plus a use case with video (OpenCode Go, `deepseek-v4.1-flash`, 10 runs/variant): mock Jev ≈0 overhead; Jev +4.6 s/turn for 3 decisions; baseline destroyed the audit trail in 4/10 runs while Jev denied every attempt — see `docs/benchmark.md` |
