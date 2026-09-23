@@ -1,7 +1,8 @@
 # Upstream compatibility
 
 Verification date: **2026-09-19** (DSH, TypeSafe, Node). `@buberlo/*` npm
-versions re-checked with `npm view` on **2026-09-20**: registry `0.1.0` only.
+versions re-checked with `npm view` on **2026-09-23**: registry lists
+`0.1.0`, `0.1.2`, `0.1.3`, and `0.1.4`. Dist-tag `latest` is **`0.1.4`**.
 Everything below was checked against the sources named here, not against
 examples copied from earlier discussions.
 
@@ -15,7 +16,7 @@ examples copied from earlier discussions.
 | `@deepseek-ai/cordis` | `4.0.2` | npm |
 | `@deepseek-ai/schemastery` | `3.18.2` | npm |
 | `@typesafe-ai/sdk` | `0.6.0` | npm + published `src/types.ts`, `src/client.ts`, `src/questions.ts` at tag `v0.6.0` |
-| `@buberlo/jev-core` / `@buberlo/dsh-jev` | npm **`0.1.0` only** (2026-09-19). Workspace **`0.1.2`** (unpublished: package READMEs + call-scoped assessment wording). **No `0.1.1` on the registry.** | `npm view` 2026-09-20 + `package.json` |
+| `@buberlo/jev-core` / `@buberlo/dsh-jev` | npm lists **`0.1.0`, `0.1.2`, `0.1.3`, `0.1.4`** (`npm view` 2026-09-23). **`latest` is `0.1.4`.** **No `0.1.1`.** `dsh-jev@0.1.2` and `dsh-jev@0.1.3` contain literal `workspace:^` and do not install. `0.1.3` abandoned (staged E409). `dsh-jev@0.1.4` depends on `jev-core@^0.1.4` and `npm install` succeeds. Workspace **`0.1.4`**. | `npm view` + `npm install` 2026-09-23 + `package.json` |
 | TypeSafe docs | docs.typesafe.ai (`llms.txt`, primitives, confidence, models, cookbooks) | fetched |
 | Node.js | tested with `26.9.0`; DSH engines require `^22.19.0 || >=24.0.0` | local |
 | pnpm | `12.4.2` | local |
@@ -210,15 +211,25 @@ The served module also contains the `settings.jev` and
 
 ## Demonstrated restrictions
 
-- **Published on npm at `0.1.0` only**: `@buberlo/jev-core` and
-  `@buberlo/dsh-jev` (2026-09-19). Verified end to end from the registry:
+- **Registry line is `0.1.4`.** `npm view` on 2026-09-23 lists `0.1.0`,
+  `0.1.2`, `0.1.3`, and `0.1.4` for `@buberlo/jev-core` and
+  `@buberlo/dsh-jev`. There is **no `0.1.1`**. Dist-tag `latest` is `0.1.4`
+  for both, matching workspace `package.json`. The end-to-end profile
+  install was verified on 2026-09-19, when `0.1.0` was the only version:
   `dsh plugin add @buberlo/dsh-jev` installed both packages transitively into
   a fresh profile, `--dump-config` composed the bundle layer, a headless boot
   loaded the host plugin, and a running web profile served
-  `@buberlo/dsh-jev/client.js`. There is **no `0.1.1` on the registry**. Local
-  `0.1.1` was a README-only bump that was never published. Workspace `0.1.2`
-  (call-scoped assessment questions that stop read false positives) is **not
-  on npm yet**. Future releases are manual (`docs/publishing.md`).
+  `@buberlo/dsh-jev/client.js`. That profile boot has not been repeated for
+  `0.1.4`. `npm install @buberlo/dsh-jev@0.1.4` does succeed and resolves
+  `@buberlo/jev-core@0.1.4` (`^0.1.4`). Local `0.1.1` was a README-only bump
+  that was never published. `@buberlo/dsh-jev@0.1.2` was packed with npm, not
+  pnpm, so it still depends on `@buberlo/jev-core` with a literal
+  `workspace:^`. `npm install` fails with `EUNSUPPORTEDPROTOCOL`. Do not
+  recommend it. The `@buberlo/dsh-jev@0.1.3` tarball has the same
+  `workspace:^` break and fails the same way. `0.1.3` was abandoned after a
+  granular bypass-2FA token staged it (E409, cannot publish over a previously
+  staged version); `0.1.4` is the version that was published instead. Future
+  releases are manual and must be pnpm packs (`docs/publishing.md`).
 - **PTC / code mode**: `run_code` sub-dispatches traverse the same pipeline and
   are assessed (tested with a nested dispatch), but a full PTC runtime was not
   mounted here; `mode: ptc` would additionally require

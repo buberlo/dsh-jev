@@ -1,6 +1,6 @@
 {
   "name": "@buberlo/jev-core",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Harness-independent TypeSafe Jev decision core: typed questions, providers, validation, policies and routing.",
   "license": "MIT",
   "type": "module",

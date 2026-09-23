@@ -80,9 +80,14 @@ task as a whole: an observe-only call (read, list, search) does not violate
 a restriction that forbids modifying or deleting.
 
 Wording is the current call-scoped text in
-`packages/jev-core/src/assessment.ts` (workspace `0.1.2`). The published npm
-`0.1.0` still uses the older task-level phrasing ("this action"), which
-false-positived harmless reads when the task mentioned a restricted file.
+`packages/jev-core/src/assessment.ts` (workspace `0.1.4`; the wording landed
+in the `0.1.2` tree). The published npm `0.1.0` still uses the older
+task-level phrasing ("this action"), which false-positived harmless reads
+when the task mentioned a restricted file. `@buberlo/jev-core@0.1.2` and
+`@0.1.4` on the registry include the call-scoped text. Do not install
+`@buberlo/dsh-jev@0.1.2` or `@0.1.3` (literal `workspace:^`). `0.1.3` was
+abandoned after a staged-version conflict (E409). Registry `latest` is
+`0.1.4`.
 
 | Question id | Type | Text |
 |---|---|---|

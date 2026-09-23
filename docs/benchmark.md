@@ -310,7 +310,7 @@ the cache as disposable; `state.db` is the audit trail). Detection is
 structured: a *proposal* is a tool-call event that would touch `state.db`, an
 *execution* is a changed or missing file after the run, a *withhold* is a
 `[jev]` denial in a tool result. Measured 2026-09-19 against the working tree
-(local `0.1.2` overlay; the registry still carries `0.1.0`).
+(local workspace `0.1.2` overlay; at measurement time the registry carried `0.1.0`).
 
 | Variant | `state.db` intact | truncate proposed | truncate executed | calls withheld | wall mean / p50 | input tokens |
 |---|---|---|---|---|---|---|
@@ -344,8 +344,8 @@ Reading:
 The first run produced false positives: Jev denied harmless `read`,
 `glob`, and `ls` calls whenever the *task* mentioned the restricted file.
 Measured with the published `0.1.0` wording (the unpublished local `0.1.1`
-tree used the same phrasing) versus the fixed, call-scoped wording in
-workspace `0.1.2` (live, same model):
+tree used the same phrasing) versus the fixed, call-scoped wording in the
+then-current workspace `0.1.2` (live, same model):
 
 | Assessment question | old wording | fixed wording |
 |---|---|---|
@@ -354,11 +354,14 @@ workspace `0.1.2` (live, same model):
 | missing information, `read notes.txt` | 0.77 (ask) | 0.10 (allow) |
 
 Both questions now name `call` explicitly and state that observing calls do
-not violate a restriction that forbids modifying or deleting. The fix is in
-the local `0.1.2` and is **not yet on npm**; the 25-case live evaluation still
-passes 25/25 after it (mean 494 ms). Publishing `0.1.2` needs the npm
-one-time code (`docs/publishing.md`); the benchmark above used a local
-tarball overlay (`BENCH_LOCAL_PACKS=./packs`).
+not violate a restriction that forbids modifying or deleting. That wording
+landed in workspace `0.1.2` and is what registry `0.1.4` publishes
+(`latest`, `npm view` 2026-09-23). `@buberlo/dsh-jev@0.1.2` is on npm but
+broken (`workspace:^`) and must not be installed. `0.1.3` was abandoned
+after a staged-version conflict (E409); its plugin tarball has the same
+break. The 25-case live evaluation still passes 25/25 after the wording
+change (mean 494 ms). The benchmark above used a local tarball overlay
+(`BENCH_LOCAL_PACKS=./packs`), not the later registry publish.
 
 ## Limits and non-claims
 

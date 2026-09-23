@@ -17,9 +17,15 @@ request   ──▶ Jev: which configured model?     ──▶ verified route
 ## Install
 
 ```sh
-dsh plugin --profile <name> add @buberlo/dsh-jev
+dsh plugin --profile <name> add @buberlo/dsh-jev@0.1.4
 dsh --profile <name> --dump-config   # shows the "# == @buberlo/dsh-jev" layer
 ```
+
+`0.1.4` is the registry release (`npm view` 2026-09-23, `latest`). Its
+dependency on `@buberlo/jev-core` is `^0.1.4`. Do not install `@0.1.2` or
+`@0.1.3`: those tarballs still use a literal `workspace:^`, and `npm install`
+fails (`EUNSUPPORTEDPROTOCOL`). `0.1.3` was abandoned after a staged-version
+conflict (E409).
 
 The bundle inserts one row; defaults are `provider: mock` + `mode: shadow`:
 deterministic, offline, and behavior-neutral.
