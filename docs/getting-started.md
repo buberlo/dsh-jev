@@ -83,7 +83,7 @@ cache), which is what makes per-call approvals meaningful.
 
 ```sh
 pnpm test        # 120 tests (82 core + 38 DSH)
-pnpm evals       # 25 evaluation fixtures, mock mode
+pnpm evals       # 25 evaluation fixtures plus the on-prem support set, mock mode
 ```
 
 - `pnpm test` proves program logic against the real DSH runtime: the real tool

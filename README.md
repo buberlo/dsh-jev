@@ -48,7 +48,7 @@ no model answer can widen a permission. Jev only ever narrows or gates.
 | Verified DSH | `0.1.6-alpha.2` (commit `ddefc45`), `@deepseek-ai/cordis` 4.0.2 |
 | Verified TypeSafe SDK | `@typesafe-ai/sdk` 0.6.0 |
 | Defaults | `provider: mock`, `mode: shadow` — offline, no behavior change |
-| Tests | 120 (82 core + 38 DSH integration) · 25 evaluation fixtures |
+| Tests | 147 (85 core + 62 DSH integration) · 25 evaluation fixtures plus the on-prem support set |
 | Live API | implemented, requires an explicit key; not part of any default |
 | License | MIT |
 
@@ -347,11 +347,11 @@ scripts/               verify.sh · packaging-test.mjs · run-evals.ts
 ```sh
 pnpm install          # workspace install
 pnpm build            # tsc for both packages
-pnpm test             # 120 tests (82 core + 38 DSH)
-pnpm calibrate        # threshold sweep over the fixtures (mock; --live with a key)
+pnpm test             # 147 tests (85 core + 62 DSH)
+pnpm calibrate        # threshold sweep over the 25 decision fixtures (mock; --live with a key)
 pnpm bench:compare    # with/without Jev: real loop, scripted model, no key needed
 pnpm bench:cli        # CLI A/B run harness (needs an OpenAI-compatible gateway)
-pnpm evals            # 25 mock evaluation fixtures
+pnpm evals            # 25 mock evaluation fixtures plus the on-prem support set
 pnpm verify           # install → build → typecheck → tests → evals → examples → packaging
 ```
 

@@ -69,7 +69,11 @@ and an empty pod selector retained, removing the ingress rules restores deny-all
 on the guarded side it was already in that state. The extra denial did not
 prevent the app repair. It is visible in the replay, mentioned in the narration,
 and retained in the raw gate decisions. This is evidence of a useful gate with
-an observed conservative error, not perfect decision quality.
+an observed conservative error, not perfect decision quality. Those observed
+calls are now labeled cases in `evals/fixtures/onprem-support.v1.jsonl`
+(see `docs/evaluation.md`). The labeled decision for the deny-all reset is
+allow; the 0.940 denial stays a live measurement target, not a retuned
+threshold.
 
 The illustrated network diagram preserves tool-call order while compressing
 idle time; it is not real-time terminal footage. The narration explicitly names

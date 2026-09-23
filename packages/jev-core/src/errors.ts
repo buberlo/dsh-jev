@@ -17,6 +17,7 @@ export type JevErrorCode =
   | 'CONNECTION'
   | 'INVALID_RESPONSE'
   | 'INVALID_CONFIG'
+  | 'INCOMPLETE_INPUT'
   | 'OFF'
   | 'UNKNOWN'
 
