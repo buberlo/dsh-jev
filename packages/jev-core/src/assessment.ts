@@ -5,7 +5,9 @@
  * task fit, missing information, and explicitly stated restrictions. A model
  * answer can only gate execution (ask/hold/deny); it can never widen a local
  * permission. On any failure the configured action is `ask` or `hold`, so a
- * missing assessment never becomes an allow.
+ * missing assessment never becomes an allow. Argument bundles that do not fit
+ * the configured bound are incomplete input: they are not transmitted, and the
+ * same failure policy applies.
  *
  * @module jev-core/assessment
  */
@@ -112,6 +114,34 @@ export async function assessToolCall(core: JevCore, input: ToolCallAssessmentInp
       values: {},
       decisions: [],
       diagnostics: { ...diagnosticsBase, stages: ['mode:off'] },
+    }
+  }
+
+  // A truncated or depth-limited bundle is not the call the model was asked
+  // about. Do not send it. The failure policy gates execution instead.
+  if (argumentsTruncated) {
+    const action = core.config.onFailure.toolAssessment
+    const decision = failureDecision(
+      action,
+      'assessment.incomplete-input',
+      'call arguments do not fit the assessment bound',
+      applied,
+    )
+    return {
+      status: action,
+      applied,
+      values: {},
+      decisions: [decision],
+      failure: {
+        code: 'INCOMPLETE_INPUT',
+        message: 'call arguments do not fit the assessment bound; incomplete input is not assessed',
+        retryable: false,
+        violations: [{ path: 'arguments', message: 'truncated or depth-limited before transmission' }],
+      },
+      diagnostics: {
+        ...diagnosticsBase,
+        stages: ['arguments:incomplete'],
+      },
     }
   }
 

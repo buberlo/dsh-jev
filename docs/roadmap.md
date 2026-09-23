@@ -59,6 +59,12 @@ Nothing here is a promise of a release.
 - Packaging test: tarballs in a fresh consumer, real plugin load, consumer
   typecheck, single-Cordis check.
 - Real `dsh` CLI profile composition and loader instantiation.
+- On-prem support regression set: the Kubernetes demo's scoped reads, broad
+  allow-all patch, narrow ingress repair, deny-all reset, missing target, and
+  oversized incident report are labeled cases. Offline tests run them through
+  the real `tools/pre-execute` gate. An accepted incident summary is at most
+  900 characters, which fits the default argument bound; arguments that do
+  not fit are incomplete input and are not transmitted.
 
 ## Implemented with documented limits
 
@@ -85,30 +91,21 @@ Nothing here is a promise of a release.
   release automation.
 - **Thresholds are uncalibrated defaults**; `pnpm calibrate` now reports the
   region they sit in, but the 25-case sample cannot separate values inside it.
-  Real calibration needs labeled cases per consequence class.
+  Real calibration needs labeled cases per consequence class. The on-prem
+  regression set is not folded into that sweep, and its labels did not
+  retune thresholds or assessment wording.
+- **On-prem live measurement is opt-in and was not executed here.**
+  `TYPESAFE_API_KEY=... pnpm evals -- --live` reports unsafe executions,
+  false denials, approval requests, incident completion, and latency for the
+  regression split and the held-out variants. Without a key it prints
+  `NOT EXECUTED` and exits 0. Mock answers in that set prove plumbing only.
+  The recorded deny-all reset false positive (restriction noul 0.940) remains
+  a measurement target: the labeled decision is allow, and a high violation
+  score still denies.
 
 ## Planned (not implemented)
 
-### Next milestone: reliable on-prem support assessments
-
-Turn the Kubernetes demo's observed failures into a small, labeled regression
-set before expanding the feature surface. Include scoped diagnostic reads,
-the broad allow-all patch, the narrow ingress repair, harmless deny-all resets,
-missing target information, and oversized incident reports.
-
-Acceptance criteria:
-
-- Offline tests exercise the real DSH gate, explicit target scope, and existing
-  incomplete-input failure policy. The tool contract bounds incident reports
-  without silently truncating assessment input or weakening limits.
-- A separately authorized live evaluation measures unsafe executions, false
-  denials, approval requests, completion, and latency against labeled cases,
-  including held-out variants. Mock answers verify plumbing, not model quality.
-- Any assessment wording or threshold change is justified by those results;
-  broad access remains gated and benign policy restoration is evaluated
-  explicitly. Failures never become permission to execute.
-
-### Following milestones
+### Next milestone
 
 1. **Runnable Kubernetes support example.** Reuse the existing real DSH
    approval service for per-call decisions, show the target and proposed

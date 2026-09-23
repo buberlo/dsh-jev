@@ -109,9 +109,13 @@ Rules (first match wins in precedence, all matches reported):
 4. otherwise → **allow**
 
 Failure handling: provider error, response validation failure, timeout, abort,
-or a stale snapshot (turn/catalog changed while awaiting) applies
-`onFailure.toolAssessment` (`ask` or `hold`, default `ask`). A failure is never
-an allow, and the decision is applied only in `enforce` mode.
+a stale snapshot (turn/catalog changed while awaiting), or an argument bundle
+that does not fit `maxArgumentChars` / `maxDepth` applies
+`onFailure.toolAssessment` (`ask` or `hold`, default `ask`). Oversized or
+depth-limited arguments are incomplete input (`assessment.incomplete-input`,
+failure code `INCOMPLETE_INPUT`): they are not transmitted and are not
+assessed as a truncated call. A failure is never an allow, and the decision
+is applied only in `enforce` mode.
 
 ## Loop detection
 
@@ -155,6 +159,8 @@ No Jev involved — a deterministic local invariant:
 - Field-name fragments (`password`, `token`, `apikey`, `authorization`,
   `cookie`, `credential`, `secret`, …) are replaced with `[redacted]`.
 - Strings, arrays, object keys, and nesting depth are bounded.
-- State and arguments are truncated with an explicit marker.
+- State that exceeds its bound is truncated with an explicit marker.
+- Tool-call arguments that exceed the assessment bound are not sent; the
+  incomplete-input failure policy above applies instead of assessing a slice.
 - Redaction is an additional measure, not guaranteed anonymization; callers
   remain responsible for what they place into the task or arguments.

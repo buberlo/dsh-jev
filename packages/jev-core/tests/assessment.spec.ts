@@ -132,7 +132,7 @@ describe('assessToolCall', () => {
     expect(withRisk.values.risk).toEqual({ score: 1.4, confidence: 0.6 })
   })
 
-  it('bounds huge arguments and reports the truncation', async () => {
+  it('does not transmit arguments that exceed the bound and applies the failure policy', async () => {
     const provider = assessmentProvider({})
     const core = createJevCore({ provider, mode: 'enforce', limits: { maxArgumentChars: 64 } })
     const assessment = await core.assessToolCall({
@@ -140,9 +140,54 @@ describe('assessToolCall', () => {
       arguments: { path: '/repo/x', blob: 'x'.repeat(5000) },
     })
     expect(assessment.diagnostics.argumentsTruncated).toBe(true)
-    const sent = JSON.stringify(provider.requests)
-    expect(sent).not.toContain('x'.repeat(200))
-    expect(sent).toContain('[truncated]')
+    expect(assessment.status).toBe('ask')
+    expect(assessment.failure?.code).toBe('INCOMPLETE_INPUT')
+    expect(assessment.decisions[0]?.rule).toBe('assessment.incomplete-input')
+    expect(provider.callCount).toBe(0)
+    expect(provider.requests).toEqual([])
+  })
+
+  it('holds incomplete arguments when configured to hold, without transmitting them', async () => {
+    const provider = assessmentProvider({})
+    const core = createJevCore({
+      provider,
+      mode: 'enforce',
+      limits: { maxArgumentChars: 64 },
+      onFailure: { toolAssessment: 'hold' },
+    })
+    const assessment = await core.assessToolCall({
+      ...baseInput,
+      arguments: { path: '/repo/x', blob: 'x'.repeat(5000) },
+    })
+    expect(assessment.status).toBe('hold')
+    expect(assessment.applied).toBe(true)
+    expect(assessment.failure?.code).toBe('INCOMPLETE_INPUT')
+    expect(provider.callCount).toBe(0)
+  })
+
+  it('does not apply an incomplete-input decision in shadow mode', async () => {
+    const provider = assessmentProvider({})
+    const core = createJevCore({ provider, mode: 'shadow', limits: { maxArgumentChars: 64 } })
+    const assessment = await core.assessToolCall({
+      ...baseInput,
+      arguments: { path: '/repo/x', blob: 'x'.repeat(5000) },
+    })
+    expect(assessment.status).toBe('ask')
+    expect(assessment.applied).toBe(false)
+    expect(provider.callCount).toBe(0)
+  })
+
+  it('treats a depth-limited argument bundle as incomplete input', async () => {
+    const provider = assessmentProvider({})
+    const core = createJevCore({ provider, mode: 'enforce', limits: { maxDepth: 2 } })
+    const assessment = await core.assessToolCall({
+      ...baseInput,
+      arguments: { spec: { ingress: { from: { namespace: 'kube-system' } } } },
+    })
+    expect(assessment.diagnostics.argumentsTruncated).toBe(true)
+    expect(assessment.status).toBe('ask')
+    expect(assessment.failure?.code).toBe('INCOMPLETE_INPUT')
+    expect(provider.callCount).toBe(0)
   })
 
   it('handles non-JSON leaves in arguments without throwing', async () => {

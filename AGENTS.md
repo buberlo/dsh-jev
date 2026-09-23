@@ -37,9 +37,9 @@ versioned de/en dataset; `tests/` live inside the plugin package.
 pnpm install            # workspace install (runs per-package tsc prepare)
 pnpm build              # tsc for both packages
 pnpm typecheck          # tsc --noEmit for both packages
-pnpm test               # vitest run per package (core 82, dsh-jev 41)
+pnpm test               # vitest run per package (core 85, dsh-jev 62)
 pnpm test --filter ...  # see vitest docs; use pnpm --filter <pkg> test
-pnpm evals              # mock evaluation fixtures (offline, 25 cases)
+pnpm evals              # mock evaluation fixtures (offline, 25 cases) plus the on-prem support set
 pnpm calibrate          # threshold sweep over the fixtures (mock; --live with a key)
 pnpm bench:compare      # deterministic with/without-Jev comparison (scripted model)
 pnpm bench:cli          # CLI A/B harness (needs BENCH_* gateway settings)
