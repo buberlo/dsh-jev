@@ -34,6 +34,11 @@ export class AgentState {
   skillHintTurn = -1
   /** Catalog version the last selection was computed against. */
   selectionCatalogVersion = -1
+  /**
+   * Whether this agent already logged the empty selection-catalog warning.
+   * One warning per agent session, so later steps of the same turn stay quiet.
+   */
+  warnedEmptySelectionCatalog = false
 
   constructor(agent: Agent) {
     this.agent = agent
