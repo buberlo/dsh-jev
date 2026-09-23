@@ -247,3 +247,11 @@ The served module also contains the `settings.jev` and
   and the component directly instead.
 - **Approval requires an open turn** upstream; assessments only run inside the
   tool pipeline, so this is satisfied by construction.
+- **Desktop stable (`0.1.5-rc.2`) is outside the verified range.** DSH Desktop
+  2.0.13 bundles `@deepseek-ai/dsh*` at `0.1.5-rc.2`. The verified matrix stays
+  `0.1.6-alpha.2`; that older bundle is not a supported selection target.
+  Selection may no-op when the tool catalog for the agent resolves empty —
+  `ctx.tools.schemas(agent)` filtered to names `ctx.tools.get(name)` resolves
+  globally — while assessment and loop detection still run. The turn stays on
+  the existing tool set. With selection enabled, that path logs one warning
+  per agent session: `tool selection skipped: tool catalog resolved empty for this agent`.

@@ -102,7 +102,18 @@ async function runSelection(
 ): Promise<void> {
   const settings = runtime.settings
   const schemas = ctx.tools.schemas(agent).filter(schema => ctx.tools.get(schema.name) !== undefined)
-  if (schemas.length === 0) return
+  if (schemas.length === 0) {
+    // Fail-open: an empty restrictable catalog leaves the turn and the
+    // existing tool set alone. Warn once per agent so a matrix mismatch
+    // (or a catalog that stays empty) is visible without a log per step.
+    if (!state.warnedEmptySelectionCatalog) {
+      state.warnedEmptySelectionCatalog = true
+      runtime.log('warn', 'tool selection skipped: tool catalog resolved empty for this agent', {
+        schemas: 0,
+      })
+    }
+    return
+  }
   const { candidates, categories } = buildSelectionCatalog(schemas, settings)
 
   const snapshotVersion = state.snapshot.version
