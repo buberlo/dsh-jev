@@ -14,11 +14,19 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Agent, PreStepDecision } from '@deepseek-ai/dsh-agent'
 import { combineSignals } from '@buberlo/jev-core'
 import type { UserMessage } from '@deepseek-ai/dsh-session'
-import { createUserMessage } from '@deepseek-ai/dsh-llm'
+import { boundContextSummary, createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
 import { isModelInvocable } from '@deepseek-ai/dsh-skill'
 import { buildSelectionCatalog } from '../config.js'
 import { describeThrown, type JevRuntime } from '../service.js'
 import type { AgentState } from '../state.js'
+
+// The message-source vocabulary is merge-extensible (rc.1 has no shared
+// catch-all `plugin` kind): each producer declares its own kind.
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'dsh-jev': { kind: 'dsh-jev' } & ContextFormed
+  }
+}
 
 /** Install the pre-step listeners. */
 export function installPreStepAdapter(ctx: Context, runtime: JevRuntime): void {
@@ -233,7 +241,7 @@ async function runSkills(
       type: 'text',
       text: `Skill routing suggestion: "${result.skill}"${detail}. Load its full instructions only if it helps with the current task.`,
     }],
-    source: { kind: 'plugin', plugin: 'dsh-jev', form: 'notice', summary: `skill: ${result.skill}` },
+    source: { kind: 'dsh-jev', form: 'notice', summary: boundContextSummary(`skill: ${result.skill}`) },
   }))
   runtime.log('info', 'skill suggestion injected', { skill: result.skill })
 }

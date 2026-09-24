@@ -1,20 +1,23 @@
 /**
- * Host-half settings integration: the `jev` namespace is registered, and a
- * committed write reconfigures the running service (mode and feature toggles)
- * without a plugin reload. Uses the real file-backed settings provider.
+ * Host-half live-settings integration (rc.1 model).
+ *
+ * A plugin's editable Config fields are declared `.volatile()`. The Loader
+ * wraps each such field in a stable reference, and on a committed settings
+ * write it moves the reference and emits `loader/volatile-update`; the plugin
+ * re-reads the fields and rebuilds its runtime in place. The test mirrors that
+ * contract by constructing the runtime directly with volatile references (the
+ * Cordis schema validates plain input, so references cannot ride `ctx.plugin`),
+ * moving a reference, emitting the event, and asserting the outcome.
  */
 
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import { createVolatile, type Volatile } from '@deepseek-ai/cosmokit'
 import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
-import SettingsFile from '@deepseek-ai/dsh-settings-file'
-import JevPlugin from '../src/index.js'
+import type { Config } from '../src/config.js'
+import { JevRuntime } from '../src/service.js'
 
 const contexts: Context[] = []
-const dirs: string[] = []
 afterEach(async () => {
   for (const ctx of contexts.splice(0)) {
     try {
@@ -23,111 +26,96 @@ afterEach(async () => {
       // Already disposed.
     }
   }
-  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
 })
 
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0) })
 
-async function mount() {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-jev-settings-'))
-  dirs.push(dir)
+/** The shared volatile write protocol (see `@deepseek-ai/cosmokit`). */
+const VOLATILE_WRITE = Symbol.for('cosmokit.volatile.write')
+
+/** Move one live config reference the way a committed settings write does. */
+function commit<T>(ref: Volatile<T>, value: T): void {
+  (ref as unknown as Record<symbol, (next: unknown) => void>)[VOLATILE_WRITE](value)
+}
+
+async function mount(config: Record<string, unknown>): Promise<{ ctx: Context; runtime: JevRuntime }> {
   const ctx = new Context()
   contexts.push(ctx)
   await mountAgentLoopTestDependencies(ctx)
-  await ctx.plugin(SettingsFile, { path: join(dir, 'settings.yaml'), watch: false })
-  await ctx.plugin(JevPlugin, {
-    provider: 'mock',
-    mode: 'shadow',
-    selection: { enabled: true },
-    assessment: { enabled: true },
-    loopDetection: { enabled: true },
-  })
-  return ctx
+  const runtime = new JevRuntime(ctx, config as Config)
+  return { ctx, runtime }
 }
 
-describe('jev settings section', () => {
-  it('registers the namespace with the composed entry as base', async () => {
-    const ctx = await mount()
-    const section = ctx.settings.get('jev') as { mode?: string; provider?: string } | undefined
-    expect(section).toBeDefined()
-    expect(section?.mode).toBe('shadow')
-    expect(section?.provider).toBe('mock')
+describe('jev live settings', () => {
+  it('reconfigures the running service when a volatile field is committed', async () => {
+    const mode = createVolatile<'off' | 'shadow' | 'enforce'>('shadow')
+    const { ctx, runtime } = await mount({ provider: 'mock', mode })
+    expect(runtime.mode).toBe('shadow')
+
+    commit(mode, 'enforce')
+    ctx.emit('loader/volatile-update', [['mode']])
+    await settle()
+    expect(runtime.mode).toBe('enforce')
   })
 
-  it('reconfigures the running service on a committed write', async () => {
-    const ctx = await mount()
-    expect(ctx.jev.mode).toBe('shadow')
+  it('reconfigures a nested feature toggle in place', async () => {
+    const enabled = createVolatile(true)
+    const { ctx, runtime } = await mount({
+      provider: 'mock',
+      mode: 'shadow',
+      selection: { enabled },
+      assessment: { enabled: true },
+    })
+    expect(runtime.settings.selection.enabled).toBe(true)
 
-    await ctx.settings.update('jev', { mode: 'enforce' })
+    commit(enabled, false)
+    ctx.emit('loader/volatile-update', [['selection', 'enabled']])
     await settle()
-    expect(ctx.jev.mode).toBe('enforce')
-
-    await ctx.settings.update('jev', { selection: { enabled: false } })
-    await settle()
-    expect(ctx.jev.settings.selection.enabled).toBe(false)
+    expect(runtime.settings.selection.enabled).toBe(false)
     // The rest of the configuration stays as composed.
-    expect(ctx.jev.settings.assessment.enabled).toBe(true)
+    expect(runtime.settings.assessment.enabled).toBe(true)
   })
 
-  it('rejects an invalid value and keeps the last good configuration', async () => {
-    const ctx = await mount()
-    await expect(ctx.settings.update('jev', { mode: 'bogus' })).rejects.toThrow()
+  it('keeps the last good configuration when a committed value cannot run', async () => {
+    const provider = createVolatile<'mock' | 'live'>('mock')
+    const { ctx, runtime } = await mount({ provider, mode: 'shadow' })
+
+    // `live` without an explicit apiKey cannot run; the write is refused.
+    commit(provider, 'live')
+    ctx.emit('loader/volatile-update', [['provider']])
     await settle()
-    expect(ctx.jev.mode).toBe('shadow')
+    expect(runtime.settings.provider).toBe('mock')
   })
 
-  it('switches to the live provider only with a key, and keeps the runtime consistent', async () => {
-    const ctx = await mount()
-    await expect(ctx.settings.update('jev', { provider: 'live' })).rejects.toThrow(/apiKey/)
-    await settle()
-    expect(ctx.jev.settings.provider).toBe('mock')
-
-    await ctx.settings.update('jev', { provider: 'live', apiKey: 'test-key-not-real' })
-    await settle()
-    expect(ctx.jev.settings.provider).toBe('live')
-    expect(ctx.jev.core.config.provider.kind).toBe('live')
-
-    await ctx.settings.update('jev', { provider: 'mock' })
-    await settle()
-    expect(ctx.jev.settings.provider).toBe('mock')
-  })
-
-  it('keeps running when the settings provider is absent', async () => {
-    const ctx = new Context()
-    contexts.push(ctx)
-    await mountAgentLoopTestDependencies(ctx)
-    await ctx.plugin(JevPlugin, { provider: 'mock', mode: 'shadow' })
-    expect(ctx.jev.mode).toBe('shadow')
+  it('keeps running when no settings provider is mounted', async () => {
+    const { ctx, runtime } = await mount({ provider: 'mock', mode: 'shadow' })
+    expect(runtime.mode).toBe('shadow')
     expect(ctx.get('settings')).toBeUndefined()
   })
 
   it('aborts in-flight assessments when the configuration changes', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'dsh-jev-reconfig-'))
-    dirs.push(dir)
-    const ctx = new Context()
-    contexts.push(ctx)
-    await mountAgentLoopTestDependencies(ctx)
-    await ctx.plugin(SettingsFile, { path: join(dir, 'settings.yaml'), watch: false })
-    await ctx.plugin(JevPlugin, {
+    const mode = createVolatile<'off' | 'shadow' | 'enforce'>('shadow')
+    const { ctx, runtime } = await mount({
       provider: 'mock',
-      mode: 'shadow',
+      mode,
       selection: { enabled: false },
       assessment: { enabled: true },
       mock: { delayMs: 5000 },
     })
 
-    const started = ctx.jev.assess({
+    const started = runtime.assess({
       task: 'Task',
       toolId: 'read_file',
       arguments: { path: '/a' },
       mode: 'shadow',
     })
     await settle()
-    expect(ctx.jev.core.activeRequests).toBe(1)
+    expect(runtime.core.activeRequests).toBe(1)
 
-    await ctx.settings.update('jev', { mode: 'off' })
+    commit(mode, 'off')
+    ctx.emit('loader/volatile-update', [['mode']])
     const assessment = await started
     expect(assessment.failure?.code).toBe('ABORTED')
-    expect(ctx.jev.core.activeRequests).toBe(0)
+    expect(runtime.core.activeRequests).toBe(0)
   })
 })

@@ -7,7 +7,7 @@
  * @module dsh-jev/client/jev-card-controller
  */
 
-import type { SettingsScope } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
 
 /** The subset of the `jev` section this card reads and edits. */
 export interface JevSettings {
@@ -60,11 +60,11 @@ function readBoolean(value: unknown, path: string, fallback: boolean): boolean {
 
 /** Bridges the `jev` settings scope onto the card's inject face. */
 export class JevCardController {
-  readonly #scope: SettingsScope<JevSettings>
+  readonly #form: ConfigForm<JevSettings>
 
-  /** @param scope - the bound settings scope for the `jev` namespace. */
-  constructor(scope: SettingsScope<JevSettings>) {
-    this.#scope = scope
+  /** @param form - the Host-owned form for the `jev` profile entry. */
+  constructor(form: ConfigForm<JevSettings>) {
+    this.#form = form
   }
 
   /**
@@ -72,7 +72,7 @@ export class JevCardController {
    * @returns the current snapshot projection and the write callback.
    */
   inject(): JevCardFace {
-    const snapshot = this.#scope.getSnapshot()
+    const snapshot = this.#form.getSnapshot()
     const value = snapshot.value
     return {
       snapshot: {
@@ -86,7 +86,7 @@ export class JevCardController {
         })),
       },
       setField: async (field, next) => {
-        await this.#scope.set(field, next)
+        await this.#form.mutate([{ op: 'set', path: field.split('.'), value: next as never }])
       },
     }
   }
