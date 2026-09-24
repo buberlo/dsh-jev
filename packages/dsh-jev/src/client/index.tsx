@@ -4,7 +4,7 @@
  *
  * The page is keyed by the bundle package name, so it appears on this
  * bundle's own page. All data arrives through the injected Cordis services
- * (`slots`, `locale`, `settingsScope`); no cross-plugin value import exists.
+ * (`slots`, `locale`, `configForms`); no cross-plugin value import exists.
  *
  * @module dsh-jev/client
  */
@@ -14,7 +14,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: the Plugins page's SlotMap merge (`plugins.bundle.config`).
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
-// Type-only: the settings scope service and the settings shell's declarations.
+// Type-only: the config-forms service and the settings shell's declarations.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls the SlotRegistry service merge (ctx.slots) and the renderer.
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
@@ -34,10 +34,13 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 }
 
 /** Client services this plugin requires. */
-export const inject = ['slots', 'locale', 'remote', 'settingsScope']
+export const inject = ['slots', 'locale', 'remote', 'configForms']
 
 /** Dictionary namespace owned by this plugin. */
 const NS = 'settings.jev'
+
+/** Settings namespace owned by this plugin: the Host profile entry id. */
+const SETTINGS_NS = 'jev'
 
 /** Keyed slot identity: the bundle's own package name. */
 const BUNDLE_KEY = '@buberlo/dsh-jev'
@@ -47,13 +50,15 @@ const BUNDLE_KEY = '@buberlo/dsh-jev'
  * @param ctx - the browser plugin context.
  */
 export function apply(ctx: ClientContext): void {
-  const controller = new JevCardController(ctx.settingsScope.bind<JevSettings>({ namespace: 'jev' }))
+  const controller = new JevCardController(ctx.configForms.get<JevSettings>(SETTINGS_NS))
   ctx.effect(() => ctx.locale.register(NS, 'en', en), 'dsh-jev: en dictionary')
   ctx.effect(() => ctx.locale.register(NS, 'de', de), 'dsh-jev: de dictionary')
-  ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
+  // The bundle's configuration page exists only while the Host serves this
+  // plugin's profile entry, so an unmounted plugin leaves no trace on the page.
+  ctx.effect(() => ctx.configForms.whileServed([SETTINGS_NS], () => ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
     name: 'plugins.bundle.config',
     key: BUNDLE_KEY,
     locale: NS,
     inject: () => controller.inject(),
-  }, JevCard))
+  }, JevCard))), 'dsh-jev: bundle configuration page')
 }

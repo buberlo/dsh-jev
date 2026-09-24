@@ -6,6 +6,9 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
+// Type-only: the Loader's `loader/volatile-update` event, emitted when a
+// committed settings write merges this plugin's declared volatile Config fields.
+import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import {
   createJevCore,
@@ -19,7 +22,6 @@ import {
   type ToolAssessment,
 } from '@buberlo/jev-core'
 import { Config as ConfigSchema, resolveSettings, type Config, type ResolvedSettings } from './config.js'
-import { installSettingsSection } from './settings-section.js'
 import { AgentState } from './state.js'
 import { installAssessmentAdapter } from './adapters/assessment.js'
 import { installPreStepAdapter } from './adapters/pre-step.js'
@@ -99,7 +101,20 @@ export class JevRuntime extends Service {
     installAssessmentAdapter(ctx, this)
     installObservationAdapter(ctx, this)
     installModelAdapter(ctx, this)
-    installSettingsSection(ctx, this, this.entryConfig)
+
+    // Settings half (rc.1 model): the plugin's Config is the profile entry's
+    // form, and editable fields declare `.volatile()`. On a committed write the
+    // Loader merges those fields into this instance and emits this event, so
+    // re-read them and rebuild the runtime in place. A value the runtime cannot
+    // honor (for example `provider: live` without a key) is logged and ignored,
+    // leaving the last good configuration running.
+    ctx.effect(() => ctx.on('loader/volatile-update', () => {
+      try {
+        this.reconfigure(this.entryConfig)
+      } catch (error) {
+        this.log('warn', `ignored settings update: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }), 'dsh-jev: volatile settings updates')
 
     this.log('info', 'loaded', {
       provider: this.settings.provider,
