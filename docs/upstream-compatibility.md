@@ -1,6 +1,7 @@
 # Upstream compatibility
 
-Verification date: **2026-09-19** (DSH, TypeSafe, Node). `@buberlo/*` npm
+Verified matrix: **`0.1.6-alpha.2`** (2026-09-19) and **`0.1.7-rc.1`**
+(2026-09-24). `@buberlo/*` npm
 versions re-checked with `npm view` on **2026-09-23**: registry lists
 `0.1.0`, `0.1.2`, `0.1.3`, and `0.1.4`. Dist-tag `latest` is **`0.1.4`**.
 Everything below was checked against the sources named here, not against
@@ -24,6 +25,47 @@ examples copied from earlier discussions.
 All DSH packages named below are **published and externally installable** at
 `0.1.6-alpha.2`; no private workspace package is assumed. Each direct
 dependency is pinned to an exact version and `pnpm-lock.yaml` is committed.
+
+## 0.1.7-rc.1 migration (2026-09-24)
+
+Verified against the rc.1 source tree (read at `/home/dsh/dsh-017-rc1`).
+`pnpm typecheck`, `pnpm build`, and `pnpm test` (jev-core 85, dsh-jev 61)
+pass at `0.1.7-rc.1`. Direct dependencies moved to `@deepseek-ai/cordis`
+`4.0.4`, `@deepseek-ai/schemastery` `3.18.4`, `@deepseek-ai/cosmokit`
+`1.8.5`, `@deepseek-ai/cordis-plugin-loader` `1.0.5`, and the `@deepseek-ai/dsh-*`
+peers to `0.1.7-rc.1`. The `0.1.6-alpha.2` bullets below remain the historical
+record where the two versions differ.
+
+What changed upstream and how this plugin was adapted:
+
+- **Settings are the Loader entry's Config.** `ctx.settings.installSection`
+  and the client `SettingsScope` service are gone. Each profile entry's
+  schemastery `Config` *is* the settings form; editable fields declare
+  `.volatile()` (`@deepseek-ai/schemastery`), the Loader wraps them in stable
+  `Volatile` references (`@deepseek-ai/cosmokit`), and a committed write merges
+  them and emits `loader/volatile-update`
+  (`@deepseek-ai/cordis-plugin-loader`). `JevRuntime` re-reads its config on
+  that event and rebuilds in place; a value it cannot honor (`provider: live`
+  with no key) is logged and ignored, leaving the last good configuration
+  running. `src/settings-section.ts` was deleted.
+- **Client settings forms**: `ctx.configForms.get(<entry id>)` returns a
+  revision-fenced `ConfigForm` (`getSnapshot`/`subscribe`/`set`/`unset`/
+  `mutate`); a nested field such as `selection.enabled` is written as an
+  ordered path operation (`{ op: 'set', path: ['selection', 'enabled'],
+  value }`). `plugins.bundle.config` is still keyed by the bundle package name
+  and receives `{ view, form? }` as owner props, but the plugin reads its own
+  form through the service and shows the page only while the Host serves the
+  entry (`ctx.configForms.whileServed`).
+- **Message sources are merge-extensible.** Rc.1 has no shared `plugin`
+  message source: each producer declares its own `kind` on `MessageSourceMap`
+  (`@deepseek-ai/dsh-llm`). This plugin declares `'dsh-jev'` and bounds the
+  `notice` summary with `boundContextSummary`.
+- **Tool results are first-class `role: 'tool'` messages** (`isError` on the
+  message; raw blocks in `content`). The `tool-result` content block type is
+  gone, so results are read from the tool-role messages.
+- **Prefer no private `#` fields in Cordis services.** The service-proxy
+  limitation (below) is unchanged; the client card controller is not a Cordis
+  service and keeps `#` fields.
 
 ## Externally verified interfaces
 
@@ -84,7 +126,7 @@ The file references are from the cloned DSH source at the commit above.
 - `agent/disposed` is the teardown notification
   (`packages/core/agent/src/runtime-types.ts:270`).
 
-### Settings and the web client
+### Settings and the web client (`0.1.6-alpha.2`; superseded by the rc.1 migration above)
 
 - Host settings: `ctx.settings.installSection(owner, ns, schema, entry, hooks)`
   registers a namespace whose resolved value layers over the plugin's composed

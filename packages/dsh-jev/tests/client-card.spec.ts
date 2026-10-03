@@ -2,20 +2,20 @@
 /**
  * Browser-half coverage for the Jev configuration card.
  *
- * Note: the published `@deepseek-ai/dsh-client-test-runtime@0.1.6-alpha.2`
- * imports `dsh-client-ui-renderer/src/...` paths that the published renderer
- * does not ship, so the slot bench cannot be loaded from npm at this version
- * (recorded in docs/upstream-compatibility.md). The test therefore exercises
- * the same layers directly: `apply()` against a recording fake context for the
- * registration wiring, and the real component with the real controller for the
- * interactions.
+ * The published `@deepseek-ai/dsh-client-test-runtime` slot bench cannot be
+ * loaded from npm at the versions this repository verifies (recorded in
+ * docs/upstream-compatibility.md), so the test exercises the same layers
+ * directly: `apply()` against a recording fake context for the registration
+ * wiring, and the real component with the real controller for the
+ * interactions. The fake `configForms` form mirrors the rc.1 `ConfigForm`
+ * contract, where a field write is an ordered path operation.
  */
 
 import { act } from '@testing-library/react'
 import { render } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type { ConfigForm, ConfigFormSnapshot } from '@deepseek-ai/dsh-client-ui-settings/client'
 import * as client from '../src/client/index.js'
 import { JevCardController, type JevSettings } from '../src/client/jev-card-controller.js'
 import { JevCard } from '../src/client/JevCard.js'
@@ -26,11 +26,11 @@ interface RegisteredCard {
   readonly component: unknown
 }
 
-function fakeScope(initial: JevSettings): {
-  scope: SettingsScope<JevSettings>
-  set: ReturnType<typeof vi.fn>
+function fakeForm(initial: JevSettings): {
+  form: ConfigForm<JevSettings>
+  mutate: ReturnType<typeof vi.fn>
 } {
-  let snapshot: SettingsScopeSnapshot<JevSettings> = {
+  const snapshot: ConfigFormSnapshot<JevSettings> = {
     status: 'ready',
     value: initial,
     base: initial,
@@ -39,33 +39,25 @@ function fakeScope(initial: JevSettings): {
     writable: true,
     mode: 'host',
   }
-  const set = vi.fn(async (field: string, value: unknown) => {
-    const [head, tail] = field.split('.')
-    if (tail === undefined) {
-      snapshot = { ...snapshot, value: { ...snapshot.value, [head as keyof JevSettings]: value } as JevSettings }
-    } else {
-      const section = (snapshot.value?.[head as keyof JevSettings] ?? {}) as Record<string, unknown>
-      snapshot = {
-        ...snapshot,
-        value: { ...snapshot.value, [head]: { ...section, [tail]: value } } as JevSettings,
-      }
-    }
-  })
+  const mutate = vi.fn(async () => true)
   return {
-    scope: {
+    form: {
       getSnapshot: () => snapshot,
       subscribe: () => () => {},
-      mutate: async () => {},
-      set,
-      unset: async () => {},
+      mutate,
+      set: async () => true,
+      unset: async () => true,
     },
-    set,
+    mutate,
   }
 }
 
-function fakeClientContext(scope: SettingsScope<JevSettings>, registered: RegisteredCard[]) {
+function fakeClientContext(form: ConfigForm<JevSettings>, registered: RegisteredCard[]) {
   return {
-    settingsScope: { bind: () => scope },
+    configForms: {
+      get: () => form,
+      whileServed: (_namespaces: readonly string[], register: () => () => void) => register(),
+    },
     locale: { register: () => () => {} },
     slots: {
       inject: (_key: string, register: () => unknown) => register(),
@@ -86,9 +78,9 @@ afterEach(() => {
 
 describe('jev client card', () => {
   it('registers the bundle page under the package name with locale and inject face', () => {
-    const { scope } = fakeScope({ provider: 'mock', mode: 'shadow' })
+    const { form } = fakeForm({ provider: 'mock', mode: 'shadow' })
     const registered: RegisteredCard[] = []
-    client.apply(fakeClientContext(scope, registered) as never)
+    client.apply(fakeClientContext(form, registered) as never)
 
     expect(registered).toHaveLength(1)
     expect(registered[0]?.options.name).toBe('plugins.bundle.config')
@@ -98,8 +90,8 @@ describe('jev client card', () => {
   })
 
   it('renders the page and writes a mode change through the controller', async () => {
-    const { scope, set } = fakeScope({ provider: 'mock', mode: 'shadow' })
-    const face = new JevCardController(scope).inject()
+    const { form, mutate } = fakeForm({ provider: 'mock', mode: 'shadow' })
+    const face = new JevCardController(form).inject()
     view = render(createElement(JevCard, {
       view: 'page',
       t: (key: keyof typeof en) => en[key],
@@ -110,16 +102,16 @@ describe('jev client card', () => {
     expect(view.container.textContent).toContain('mock')
     const enforce = view.getByRole('button', { name: 'Enforce' })
     await act(async () => { enforce.click() })
-    expect(set).toHaveBeenCalledWith('mode', 'enforce')
+    expect(mutate).toHaveBeenCalledWith([{ op: 'set', path: ['mode'], value: 'enforce' }])
   })
 
-  it('renders feature state and writes a toggle', async () => {
-    const { scope, set } = fakeScope({
+  it('renders feature state and writes a nested toggle', async () => {
+    const { form, mutate } = fakeForm({
       provider: 'mock',
       mode: 'shadow',
       skills: { enabled: false },
     })
-    const face = new JevCardController(scope).inject()
+    const face = new JevCardController(form).inject()
     view = render(createElement(JevCard, {
       view: 'page',
       t: (key: keyof typeof en) => en[key],
@@ -129,12 +121,12 @@ describe('jev client card', () => {
     const skills = view.getByRole('checkbox', { name: /Skill routing/ })
     expect((skills as HTMLInputElement).checked).toBe(false)
     await act(async () => { skills.click() })
-    expect(set).toHaveBeenCalledWith('skills.enabled', true)
+    expect(mutate).toHaveBeenCalledWith([{ op: 'set', path: ['skills', 'enabled'], value: true }])
   })
 
   it('switches the provider and writes a write-only API key', async () => {
-    const { scope, set } = fakeScope({ provider: 'mock', mode: 'shadow' })
-    const face = new JevCardController(scope).inject()
+    const { form, mutate } = fakeForm({ provider: 'mock', mode: 'shadow' })
+    const face = new JevCardController(form).inject()
     view = render(createElement(JevCard, {
       view: 'page',
       t: (key: keyof typeof en) => en[key],
@@ -143,7 +135,7 @@ describe('jev client card', () => {
 
     const live = view.getByRole('button', { name: 'live' })
     await act(async () => { live.click() })
-    expect(set).toHaveBeenCalledWith('provider', 'live')
+    expect(mutate).toHaveBeenCalledWith([{ op: 'set', path: ['provider'], value: 'live' }])
 
     const key = view.getByPlaceholderText('Paste a TypeSafe API key')
     await act(async () => {
@@ -152,14 +144,14 @@ describe('jev client card', () => {
     })
     const save = view.getByRole('button', { name: 'Save key' })
     await act(async () => { save.click() })
-    expect(set).toHaveBeenCalledWith('apiKey', 'ts-test-key')
+    expect(mutate).toHaveBeenCalledWith([{ op: 'set', path: ['apiKey'], value: 'ts-test-key' }])
     // The value never stays in the DOM after saving.
     expect((view.getByPlaceholderText('Paste a TypeSafe API key') as HTMLInputElement).value).toBe('')
   })
 
   it('renders the one-line summary for the bundle page', () => {
-    const { scope } = fakeScope({ provider: 'mock', mode: 'shadow' })
-    const face = new JevCardController(scope).inject()
+    const { form } = fakeForm({ provider: 'mock', mode: 'shadow' })
+    const face = new JevCardController(form).inject()
     view = render(createElement(JevCard, {
       view: 'summary',
       t: (key: keyof typeof en) => en[key],
@@ -169,7 +161,7 @@ describe('jev client card', () => {
   })
 
   it('shows the unavailable state without controls', () => {
-    const unavailable: SettingsScope<JevSettings> = {
+    const unavailable: ConfigForm<JevSettings> = {
       getSnapshot: () => ({
         status: 'unavailable',
         value: undefined,
@@ -180,9 +172,9 @@ describe('jev client card', () => {
         mode: 'host',
       }),
       subscribe: () => () => {},
-      mutate: async () => {},
-      set: async () => {},
-      unset: async () => {},
+      mutate: async () => true,
+      set: async () => true,
+      unset: async () => true,
     }
     const face = new JevCardController(unavailable).inject()
     view = render(createElement(JevCard, {

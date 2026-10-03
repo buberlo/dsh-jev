@@ -105,11 +105,10 @@ async function runTurn(agent: Agent, _harness: AgentLoopTestHarness, text: strin
 function toolFailureTexts(agent: Agent): string[] {
   const texts: string[] = []
   for (const message of agent.session.deriveMessages()) {
-    for (const block of message.content) {
-      if (block.type === 'tool-result' && block.isError === true) {
-        for (const inner of block.content) if (inner.type === 'text') texts.push(inner.text)
-      }
-    }
+    // rc.1 tool results are first-class `tool`-role messages: the outcome lives
+    // on the message (`isError`) and `content` holds the raw blocks directly.
+    if (message.role !== 'tool' || message.isError !== true) continue
+    for (const block of message.content) if (block.type === 'text') texts.push(block.text)
   }
   return texts
 }

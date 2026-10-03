@@ -19,8 +19,8 @@ const packs = join(work, 'packs')
 const consumer = join(work, 'consumer')
 const keep = process.argv.includes('--keep')
 
-const DSH_VERSION = '0.1.6-alpha.2'
-const CORDIS_VERSION = '4.0.2'
+const DSH_VERSION = '0.1.7-rc.1'
+const CORDIS_VERSION = '4.0.4'
 const TYPESCRIPT_VERSION = '6.0.3'
 
 function run(command, args, options = {}) {
@@ -167,7 +167,7 @@ const reactStub = { useState: (value) => [typeof value === 'function' ? value() 
 const jsxStub = { jsx: () => null, jsxs: () => null, Fragment: {} }
 const clientExports = loaded.factory((id) => id === 'react' ? reactStub : jsxStub)
 assert.equal(typeof clientExports.apply, 'function', 'client artifact must export apply')
-assert.deepEqual([...clientExports.inject].sort(), ['locale', 'remote', 'settingsScope', 'slots'])
+assert.deepEqual([...clientExports.inject].sort(), ['configForms', 'locale', 'remote', 'slots'])
 
 await ctx.fiber.dispose()
 console.log('smoke: OK (standalone core, real plugin load, fail-closed enforcement, single cordis, client artifact)')

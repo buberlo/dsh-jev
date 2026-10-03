@@ -9,8 +9,20 @@
  * @module dsh-jev/config
  */
 
+import type { Volatile } from '@deepseek-ai/cordis'
+import { isVolatile } from '@deepseek-ai/cosmokit'
 import z from '@deepseek-ai/schemastery'
 import type { JevThresholds, MockScenario, ToolCandidateInfo, ToolCategoryInfo } from '@buberlo/jev-core'
+
+/**
+ * Read the current value of a Config field that may be a live `Volatile`
+ * reference (an editable field) or an ordinary composed value.
+ * @param value - a resolved config field from the host.
+ * @returns the field's current plain value, or undefined when absent.
+ */
+function live<T>(value: Volatile<T> | T | undefined): T | undefined {
+  return isVolatile(value) ? (value.get() as T) : value
+}
 
 /** One configured model route target. */
 export interface ModelRouteConfig {
@@ -20,16 +32,16 @@ export interface ModelRouteConfig {
 
 /** Plugin configuration. */
 export interface Config {
-  /** Answer source: deterministic mock or the live TypeSafe API. */
+  /** Answer source: deterministic mock or the live TypeSafe API. Live editable. */
   provider?: 'mock' | 'live'
-  /** Behavior mode: no requests, log-only, or apply decisions. */
+  /** Behavior mode: no requests, log-only, or apply decisions. Live editable. */
   mode?: 'off' | 'shadow' | 'enforce'
   /** Model override for the live provider; omitted uses `jev-latest`. */
   model?: string
   /**
    * TypeSafe API key. Required for `provider: live`; never read implicitly
    * from the environment. Use `!!js process.env.TYPESAFE_API_KEY` to wire an
-   * environment value explicitly.
+   * environment value explicitly. Live editable; the schema marks it a secret.
    */
   apiKey?: string
   /** API root override for proxies/gateways. */
@@ -137,12 +149,12 @@ const thresholdsSchema = z.object({
   modelRoute: z.number().default(0.4),
 })
 
-/** Schemastery schema for the plugin config. */
-export const Config: z<Config> = z.object({
-  provider: z.union(['mock', 'live'] as const).default('mock'),
-  mode: z.union(['off', 'shadow', 'enforce'] as const).default('shadow'),
+/** Schemastery schema for the plugin config. Volatile fields are live-editable. */
+export const Config = z.object({
+  provider: z.union(['mock', 'live'] as const).default('mock').volatile(),
+  mode: z.union(['off', 'shadow', 'enforce'] as const).default('shadow').volatile(),
   model: z.string(),
-  apiKey: z.string().role('secret'),
+  apiKey: z.string().role('secret').volatile(),
   baseURL: z.string(),
   timeoutMs: z.natural().default(5000),
   budgetMs: z.natural().default(8000),
@@ -158,30 +170,30 @@ export const Config: z<Config> = z.object({
   logDecisions: z.boolean().default(true),
   thresholds: thresholdsSchema,
   selection: z.object({
-    enabled: z.boolean().default(true),
+    enabled: z.boolean().default(true).volatile(),
     alwaysAllow: z.array(z.string()).default([]),
     categories: z.dict(z.string()).default({}),
     toolCategories: z.dict(z.array(z.string())).default({}),
   }),
   assessment: z.object({
-    enabled: z.boolean().default(true),
+    enabled: z.boolean().default(true).volatile(),
     onFailure: z.union(['ask', 'hold'] as const).default('ask'),
     includeRiskScore: z.boolean().default(false),
     restrictions: z.array(z.string()).default([]),
   }),
   loopDetection: z.object({
-    enabled: z.boolean().default(true),
+    enabled: z.boolean().default(true).volatile(),
     maxRepeats: z.natural().min(2).default(2),
     maxSubjects: z.natural().min(1).default(64),
   }),
   skills: z.object({
-    enabled: z.boolean().default(false),
+    enabled: z.boolean().default(false).volatile(),
     injectHint: z.boolean().default(true),
     routingHints: z.dict(z.string()).default({}),
     maxDescriptionChars: z.natural().min(1).default(240),
   }),
   modelRouting: z.object({
-    enabled: z.boolean().default(false),
+    enabled: z.boolean().default(false).volatile(),
     routes: z.object({
       fast: routeSchema,
       balanced: routeSchema,
@@ -257,11 +269,12 @@ export interface ResolvedSettings {
  * @returns fully populated settings.
  */
 export function resolveSettings(config: Config): ResolvedSettings {
+  const apiKey = live(config.apiKey)
   return {
-    provider: config.provider ?? 'mock',
-    mode: config.mode ?? 'shadow',
+    provider: live(config.provider) ?? 'mock',
+    mode: live(config.mode) ?? 'shadow',
     ...(config.model === undefined ? {} : { model: config.model }),
-    ...(config.apiKey === undefined ? {} : { apiKey: config.apiKey }),
+    ...(apiKey === undefined ? {} : { apiKey }),
     ...(config.baseURL === undefined ? {} : { baseURL: config.baseURL }),
     timeoutMs: config.timeoutMs ?? 5000,
     budgetMs: config.budgetMs ?? 8000,
@@ -286,30 +299,30 @@ export function resolveSettings(config: Config): ResolvedSettings {
       modelRoute: config.thresholds?.modelRoute ?? 0.4,
     },
     selection: {
-      enabled: config.selection?.enabled ?? true,
+      enabled: live(config.selection?.enabled) ?? true,
       alwaysAllow: config.selection?.alwaysAllow ?? [],
       categories: config.selection?.categories ?? {},
       toolCategories: config.selection?.toolCategories ?? {},
     },
     assessment: {
-      enabled: config.assessment?.enabled ?? true,
+      enabled: live(config.assessment?.enabled) ?? true,
       onFailure: config.assessment?.onFailure ?? 'ask',
       includeRiskScore: config.assessment?.includeRiskScore ?? false,
       restrictions: config.assessment?.restrictions ?? [],
     },
     loopDetection: {
-      enabled: config.loopDetection?.enabled ?? true,
+      enabled: live(config.loopDetection?.enabled) ?? true,
       maxRepeats: config.loopDetection?.maxRepeats ?? 2,
       maxSubjects: config.loopDetection?.maxSubjects ?? 64,
     },
     skills: {
-      enabled: config.skills?.enabled ?? false,
+      enabled: live(config.skills?.enabled) ?? false,
       injectHint: config.skills?.injectHint ?? true,
       routingHints: config.skills?.routingHints ?? {},
       maxDescriptionChars: config.skills?.maxDescriptionChars ?? 240,
     },
     modelRouting: {
-      enabled: config.modelRouting?.enabled ?? false,
+      enabled: live(config.modelRouting?.enabled) ?? false,
       routes: {
         ...(config.modelRouting?.routes?.fast === undefined ? {} : { fast: config.modelRouting.routes.fast }),
         ...(config.modelRouting?.routes?.balanced === undefined ? {} : { balanced: config.modelRouting.routes.balanced }),
