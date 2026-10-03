@@ -63,6 +63,8 @@
     "@deepseek-ai/dsh-user-approval": "^0.1.6-alpha.2"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-api-remotes": "0.1.6-alpha.2",
+    "@deepseek-ai/dsh-api-session-controller": "0.1.6-alpha.2",
     "@deepseek-ai/cordis": "4.0.2",
     "@deepseek-ai/dsh-agent": "0.1.6-alpha.2",
     "@deepseek-ai/dsh-agent-loop": "0.1.6-alpha.2",

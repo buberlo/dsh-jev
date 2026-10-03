@@ -69,6 +69,21 @@ describe('jev settings section', () => {
     expect(ctx.jev.settings.assessment.enabled).toBe(true)
   })
 
+  it('persists routing settings and reconfigures routes without losing sibling routes', async () => {
+    const ctx = await mount()
+    expect(ctx.jev.settings.modelRouting.enabled).toBe(false)
+    await ctx.settings.update('jev', { modelRouting: { enabled: true, routes: { fast: { provider: 'gateway', model: 'flash' } } } })
+    await settle()
+    await ctx.settings.update('jev', { modelRouting: { routes: { balanced: { provider: 'gateway', model: 'pro' } } } })
+    await settle()
+    expect(ctx.jev.settings.modelRouting.enabled).toBe(true)
+    expect(ctx.jev.settings.modelRouting.routes).toMatchObject({
+      fast: { provider: 'gateway', model: 'flash' },
+      balanced: { provider: 'gateway', model: 'pro' },
+    })
+    expect(ctx.settings.get('jev')).toMatchObject({ modelRouting: ctx.jev.settings.modelRouting })
+  })
+
   it('rejects an invalid value and keeps the last good configuration', async () => {
     const ctx = await mount()
     await expect(ctx.settings.update('jev', { mode: 'bogus' })).rejects.toThrow()
