@@ -1,5 +1,50 @@
 # dsh-jev
 
+> [!WARNING]
+> **Development of dsh-jev has been discontinued (October 2026).**
+> There will be no further releases of `@buberlo/dsh-jev` or `@buberlo/jev-core`;
+> `0.1.4` is the last version. The code was only ever tested against
+> DeepSeek Harness `0.1.6-alpha.x` (verified on `0.1.6-alpha.2`) and may not work
+> with newer DSH releases. Issues and pull requests will no longer be worked on.
+>
+> **For Jev in DeepSeek Harness or any MCP host, please use
+> [jevcore](https://github.com/PerryLink/jevcore) by PerryLink.** It is maintained,
+> more widely used, offline by default, and Apache-2.0 licensed:
+> `jevcore` (harness-independent core), `jevcore-dsh` (DSH plugin) and
+> `jevcore-mcp` (MCP stdio server).
+
+## Ideas others are welcome to adopt
+
+This repository stays available under the MIT licence. If any of these ideas are
+useful to you, please take them — in jevcore or anywhere else:
+
+- **Monotone permission narrowing.** Jev may only restrict, never widen:
+  tool selection intersects with existing restrictions, and call assessments
+  compose as `deny > hold > ask > allow` after calling `next()`, so later
+  policies are never skipped. Errors, timeouts and stale snapshots fail closed
+  (`ask`/`hold`, never `allow`).
+  See [`docs/policy.md`](docs/policy.md).
+- **Shadow mode and an offline mock as the default.** `provider: mock` +
+  `mode: shadow` logs decisions without changing behaviour, so operators can
+  observe before enforcing.
+- **Measured benchmarks and regression sets.** Versioned evaluation fixtures,
+  an on-prem support assessment regression set, and with/without-Jev
+  benchmarks (e.g. a protected audit trail blocked in 10/10 runs) with method
+  and limits documented in [`docs/benchmark.md`](docs/benchmark.md) and
+  [`docs/evaluation.md`](docs/evaluation.md).
+
+## Thank you
+
+Thanks to everyone who tried dsh-jev, reported problems, or contributed —
+in particular [@Daltonganger](https://github.com/Daltonganger) and
+[@autox-my](https://github.com/autox-my) for their pull requests — and to
+PerryLink for building and maintaining jevcore.
+
+---
+
+The original README follows for reference.
+
+
 **The Jev decision layer for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH).**
 
 DSH runs the agent. [TypeSafe Jev](https://docs.typesafe.ai/) makes the small,

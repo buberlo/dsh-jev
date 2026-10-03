@@ -1,5 +1,14 @@
 # @buberlo/dsh-jev
 
+> [!WARNING]
+> **Discontinued (October 2026).** This package receives no further releases;
+> `0.1.4` is the last version, tested only against DeepSeek Harness
+> `0.1.6-alpha.x`. For Jev in DSH or MCP hosts, please use
+> [jevcore](https://github.com/PerryLink/jevcore)
+> (`jevcore`, `jevcore-dsh`, `jevcore-mcp`). See the
+> [repository README](https://github.com/buberlo/dsh-jev#readme) for details.
+
+
 The Jev decision layer plugin and bundle for
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH).
 
