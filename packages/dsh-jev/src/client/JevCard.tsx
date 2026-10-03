@@ -10,10 +10,10 @@
  * @module dsh-jev/client/JevCard
  */
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { JevCardFace } from './jev-card-controller.js'
+import { ROUTE_CLASSES, type JevCardFace, type JevRoute, type JevRouteClass } from './jev-card-controller.js'
 
 /** Props the renderer binds for the bundle's configuration page. */
 export type JevCardProps =
@@ -51,15 +51,38 @@ export function JevCard(props: JevCardProps): ReactNode {
   ))
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   const [error, setError] = useState('')
+  const [models, setModels] = useState<readonly (JevRoute & { name?: string })[]>([])
+  const [catalogState, setCatalogState] = useState<'loading' | 'ready' | 'failed'>('loading')
+  const [catalogError, setCatalogError] = useState('')
+
+  useEffect(() => {
+    if (props.view === 'summary') return
+    let active = true
+    setCatalogState('loading')
+    const load = props.loadModels?.() ?? Promise.reject(new Error(t('catalogUnavailable')))
+    load.then(next => { if (active) { setModels(next); setCatalogState('ready') } }, reason => {
+      if (active) { setModels([]); setCatalogState('failed'); setCatalogError(reason instanceof Error ? reason.message : String(reason)) }
+    })
+    return () => { active = false }
+  }, [props.loadModels, props.view])
+
+  useEffect(() => {
+    setMode(props.snapshot.mode)
+    setProvider(props.snapshot.provider)
+    setFeatures(Object.fromEntries(props.snapshot.features.map(feature => [feature.field, feature.enabled])))
+  }, [props.snapshot])
 
   if (props.view === 'summary') return t('summary')
 
-  const persist = (field: string, value: unknown): void => {
+  const persist = (field: string, value: unknown, onSaved?: () => void): void => {
     setState('saving')
     setError('')
     props.setField(field, value).then(
-      () => { setState('saved') },
+      () => { onSaved?.(); setState('saved') },
       (reason: unknown) => {
+        setMode(props.snapshot.mode)
+        setProvider(props.snapshot.provider)
+        setFeatures(Object.fromEntries(props.snapshot.features.map(feature => [feature.field, feature.enabled])))
         setState('failed')
         setError(reason instanceof Error ? reason.message : String(reason))
       },
@@ -88,7 +111,7 @@ export function JevCard(props: JevCardProps): ReactNode {
   return (
     <div style={styles.root}>
       <p style={styles.intro}>{t('intro')}</p>
-      <p style={styles.status}>{t('writable')}</p>
+      <p style={styles.status}>{t(props.snapshot.writable ? 'writable' : 'readOnly')}</p>
 
       <div style={styles.row}>
         <span style={styles.label}>{t('provider')}</span>
@@ -174,16 +197,61 @@ export function JevCard(props: JevCardProps): ReactNode {
         </div>
       </div>
 
+      <section aria-label={t('routes')}>
+        <div style={styles.label}>{t('routes')}</div>
+        <p style={styles.hint}>{t('routesHint')}</p>
+        {catalogState !== 'ready' ? <p role="status" style={catalogState === 'failed' ? styles.error : styles.hint}>{catalogState === 'loading' ? t('catalogLoading') : catalogError}</p> : models.length === 0 ? <p style={styles.hint}>{t('catalogEmpty')}</p> : null}
+        {ROUTE_CLASSES.map(routeClass => (
+          <RouteEditor key={routeClass} routeClass={routeClass} route={props.snapshot.routes[routeClass]} disabled={disabled || catalogState !== 'ready' || models.length === 0} models={models} t={t} persist={persist} />
+        ))}
+      </section>
+
       <div style={styles.row}>
-        <button type="button" disabled={disabled} style={styles.chip} onClick={() => { setState('saved') }}>
-          {t('save')}
-        </button>
-        <span style={state === 'failed' ? styles.error : styles.status}>
+        <span role="status" style={state === 'failed' ? styles.error : styles.status}>
           {state === 'saving' ? t('saving') : state === 'saved' ? t('saved') : ''}
           {state === 'failed' ? `${t('failed')}${error}` : ''}
         </span>
       </div>
     </div>
+  )
+}
+
+function routeKey(route: JevRoute | undefined): string {
+  return route ? JSON.stringify([route.provider, route.model]) : ''
+}
+
+function RouteEditor({ routeClass, route, disabled, models, t, persist }: {
+  routeClass: JevRouteClass
+  route: JevRoute | undefined
+  disabled: boolean
+  models: readonly (JevRoute & { name?: string })[]
+  t: JevCardProps['t']
+  persist: (field: string, value: unknown, onSaved?: () => void) => void
+}): ReactNode {
+  const [selected, setSelected] = useState(routeKey(route))
+  const [saved, setSaved] = useState(route)
+  useEffect(() => {
+    setSelected(routeKey(route))
+    setSaved(route)
+  }, [route?.provider, route?.model])
+  const next = models.find(model => routeKey(model) === selected)
+  return (
+    <fieldset style={{ margin: '8px 0' }} disabled={disabled}>
+      <legend>{routeClass}</legend>
+      <p style={styles.hint}>{saved?.provider && saved.model ? `${saved.provider} / ${saved.model}` : t('routeNotConfigured')}</p>
+      <div style={styles.row}>
+        <label>{t('model')} <select aria-label={`${routeClass} ${t('model')}`} value={selected} onChange={event => setSelected(event.target.value)} style={{ maxWidth: '100%' }}>
+          <option value="">{t('chooseModel')}</option>
+          {selected && !next ? <option value={selected} disabled>{saved?.provider} / {saved?.model} — {t('modelUnavailable')}</option> : null}
+          {models.map(model => <option key={routeKey(model)} value={routeKey(model)}>{model.name ?? `${model.provider} / ${model.model}`}</option>)}
+        </select></label>
+        <button type="button" style={styles.chip} aria-label={`${t('save')} ${routeClass} ${t('route')}`} disabled={disabled || !next} onClick={() => {
+          if (!next) return
+          const value = { provider: next.provider, model: next.model }
+          persist(`modelRouting.routes.${routeClass}`, value, () => setSaved(value))
+        }}>{t('save')}</button>
+      </div>
+    </fieldset>
   )
 }
 

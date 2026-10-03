@@ -10,6 +10,8 @@
  */
 
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type {} from '@deepseek-ai/dsh-api-session-controller/remote'
 // Type-only: the locale plugin's Context merge (ctx.locale).
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: the Plugins page's SlotMap merge (`plugins.bundle.config`).
@@ -34,7 +36,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 }
 
 /** Client services this plugin requires. */
-export const inject = ['slots', 'locale', 'remote', 'settingsScope']
+export const inject = ['slots', 'locale', 'remote', 'remote.session', 'settingsScope']
 
 /** Dictionary namespace owned by this plugin. */
 const NS = 'settings.jev'
@@ -48,12 +50,22 @@ const BUNDLE_KEY = '@buberlo/dsh-jev'
  */
 export function apply(ctx: ClientContext): void {
   const controller = new JevCardController(ctx.settingsScope.bind<JevSettings>({ namespace: 'jev' }))
+  const loadModels = async () => {
+    const result = await ctx.remote.session.modelCatalog()
+    if (!result.ok) throw new Error(result.error.message)
+    return result.value.groups.flatMap(group => group.models.map(model => ({
+      provider: group.id, model: model.id, name: `${group.name} / ${model.name}`,
+    })))
+  }
   ctx.effect(() => ctx.locale.register(NS, 'en', en), 'dsh-jev: en dictionary')
   ctx.effect(() => ctx.locale.register(NS, 'de', de), 'dsh-jev: de dictionary')
   ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
     name: 'plugins.bundle.config',
     key: BUNDLE_KEY,
     locale: NS,
-    inject: () => controller.inject(),
+    inject: () => ({
+      ...controller.inject(),
+      loadModels,
+    }),
   }, JevCard))
 }

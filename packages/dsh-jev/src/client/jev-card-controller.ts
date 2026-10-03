@@ -9,6 +9,10 @@
 
 import type { SettingsScope } from '@deepseek-ai/dsh-client-ui-settings/client'
 
+export const ROUTE_CLASSES = ['fast', 'balanced', 'reasoning'] as const
+export type JevRouteClass = typeof ROUTE_CLASSES[number]
+export interface JevRoute { provider: string; model: string }
+
 /** The subset of the `jev` section this card reads and edits. */
 export interface JevSettings {
   provider?: 'mock' | 'live'
@@ -17,7 +21,7 @@ export interface JevSettings {
   assessment?: { enabled?: boolean }
   loopDetection?: { enabled?: boolean }
   skills?: { enabled?: boolean }
-  modelRouting?: { enabled?: boolean }
+  modelRouting?: { enabled?: boolean; routes?: Partial<Record<JevRouteClass, JevRoute>> }
 }
 
 /** One feature toggle the card renders. */
@@ -35,9 +39,11 @@ export interface JevCardFace {
     readonly provider: 'mock' | 'live'
     readonly mode: 'off' | 'shadow' | 'enforce'
     readonly features: readonly JevFeatureState[]
+    readonly routes: Partial<Record<JevRouteClass, JevRoute>>
   }
   /** Store one field value through the settings scope. */
   readonly setField: (field: string, value: unknown) => Promise<void>
+  readonly loadModels?: () => Promise<readonly (JevRoute & { name?: string })[]>
 }
 
 const FEATURE_FIELDS: readonly string[] = [
@@ -82,8 +88,9 @@ export class JevCardController {
         mode: value?.mode ?? 'shadow',
         features: FEATURE_FIELDS.map((field): JevFeatureState => ({
           field,
-          enabled: readBoolean(value, field, true),
+          enabled: readBoolean(value, field, field !== 'modelRouting.enabled'),
         })),
+        routes: value?.modelRouting?.routes ?? {},
       },
       setField: async (field, next) => {
         await this.#scope.set(field, next)

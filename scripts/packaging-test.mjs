@@ -167,7 +167,7 @@ const reactStub = { useState: (value) => [typeof value === 'function' ? value() 
 const jsxStub = { jsx: () => null, jsxs: () => null, Fragment: {} }
 const clientExports = loaded.factory((id) => id === 'react' ? reactStub : jsxStub)
 assert.equal(typeof clientExports.apply, 'function', 'client artifact must export apply')
-assert.deepEqual([...clientExports.inject].sort(), ['locale', 'remote', 'settingsScope', 'slots'])
+assert.deepEqual([...clientExports.inject].sort(), ['locale', 'remote', 'remote.session', 'settingsScope', 'slots'])
 
 await ctx.fiber.dispose()
 console.log('smoke: OK (standalone core, real plugin load, fail-closed enforcement, single cordis, client artifact)')

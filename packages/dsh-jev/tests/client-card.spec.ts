@@ -11,18 +11,18 @@
  * interactions.
  */
 
-import { act } from '@testing-library/react'
+import { act, fireEvent } from '@testing-library/react'
 import { render } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-client-ui-settings/client'
 import * as client from '../src/client/index.js'
-import { JevCardController, type JevSettings } from '../src/client/jev-card-controller.js'
+import { JevCardController, type JevSettings, type JevCardFace } from '../src/client/jev-card-controller.js'
 import { JevCard } from '../src/client/JevCard.js'
 import { en } from '../src/client/locales.js'
 
 interface RegisteredCard {
-  readonly options: { name: string; key: string; locale?: string }
+  readonly options: { name: string; key: string; locale?: string; inject?: () => JevCardFace }
   readonly component: unknown
 }
 
@@ -40,16 +40,16 @@ function fakeScope(initial: JevSettings): {
     mode: 'host',
   }
   const set = vi.fn(async (field: string, value: unknown) => {
-    const [head, tail] = field.split('.')
-    if (tail === undefined) {
-      snapshot = { ...snapshot, value: { ...snapshot.value, [head as keyof JevSettings]: value } as JevSettings }
-    } else {
-      const section = (snapshot.value?.[head as keyof JevSettings] ?? {}) as Record<string, unknown>
-      snapshot = {
-        ...snapshot,
-        value: { ...snapshot.value, [head]: { ...section, [tail]: value } } as JevSettings,
-      }
+    const next = structuredClone(snapshot.value ?? {})
+    const segments = field.split('.')
+    const leaf = segments.pop()!
+    let target = next as Record<string, unknown>
+    for (const segment of segments) {
+      target[segment] ??= {}
+      target = target[segment] as Record<string, unknown>
     }
+    target[leaf] = value
+    snapshot = { ...snapshot, value: next }
   })
   return {
     scope: {
@@ -97,6 +97,21 @@ describe('jev client card', () => {
     expect(typeof registered[0]?.component).toBe('function')
   })
 
+  it('loads route options from the global host catalog, preserving slash IDs and remote errors', async () => {
+    const { scope } = fakeScope({})
+    const registered: RegisteredCard[] = []
+    const modelCatalog = vi.fn(async () => ({ ok: true, value: { groups: [{ id: 'gateway', name: 'Gateway', models: [{ id: 'vendor/pro', name: 'Pro' }] }] } }))
+    const remote = { get session() {
+      if (!client.inject.includes('remote.session')) throw new Error('cannot get property "remote.session" without inject')
+      return { modelCatalog }
+    } }
+    client.apply({ ...fakeClientContext(scope, registered), remote } as never)
+    const face = registered[0]!.options.inject!()
+    expect(await face.loadModels!()).toEqual([{ provider: 'gateway', model: 'vendor/pro', name: 'Gateway / Pro' }])
+    modelCatalog.mockResolvedValueOnce({ ok: false, error: { message: 'Catalog rejected' } } as never)
+    await expect(face.loadModels!()).rejects.toThrow('Catalog rejected')
+  })
+
   it('renders the page and writes a mode change through the controller', async () => {
     const { scope, set } = fakeScope({ provider: 'mock', mode: 'shadow' })
     const face = new JevCardController(scope).inject()
@@ -130,6 +145,92 @@ describe('jev client card', () => {
     expect((skills as HTMLInputElement).checked).toBe(false)
     await act(async () => { skills.click() })
     expect(set).toHaveBeenCalledWith('skills.enabled', true)
+  })
+
+  it('shows routing off when no routing setting exists', () => {
+    const { scope } = fakeScope({})
+    view = render(createElement(JevCard, { view: 'page', t: (key: keyof typeof en) => en[key], ...new JevCardController(scope).inject() } as never))
+    expect((view.getByRole('checkbox', { name: /Model routing/ }) as HTMLInputElement).checked).toBe(false)
+  })
+
+  it('selects catalog models and saves their provider/model pair', async () => {
+    const { scope, set } = fakeScope({ modelRouting: { enabled: true, routes: { fast: { provider: 'gateway', model: 'flash' } } } } as JevSettings)
+    const controller = new JevCardController(scope)
+    const props = () => ({ view: 'page', t: (key: keyof typeof en) => en[key], ...controller.inject(), loadModels: async () => [{ provider: 'gateway', model: 'flash' }, { provider: 'gateway', model: 'pro' }, { provider: 'gateway', model: 'reasoner' }] } as never)
+    view = render(createElement(JevCard, props()))
+    await act(async () => {})
+    const select = view.getByRole('combobox', { name: 'balanced Model' }) as HTMLSelectElement
+    expect(view.queryByRole('textbox', { name: 'fast Provider' })).toBeNull()
+    expect(view.getAllByText('Not configured')).toHaveLength(2)
+    expect((view.getByRole('button', { name: 'Save balanced route' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(select, { target: { value: JSON.stringify(['gateway', 'pro']) } })
+    await act(async () => { view!.getByRole('button', { name: 'Save balanced route' }).click() })
+    expect(set).toHaveBeenCalledWith('modelRouting.routes.balanced', { provider: 'gateway', model: 'pro' })
+    view.unmount()
+    view = render(createElement(JevCard, props()))
+    await act(async () => {})
+    expect((view.getByRole('combobox', { name: 'balanced Model' }) as HTMLSelectElement).value).toBe(JSON.stringify(['gateway', 'pro']))
+    expect((view.getByRole('combobox', { name: 'fast Model' }) as HTMLSelectElement).value).toBe(JSON.stringify(['gateway', 'flash']))
+  })
+
+  it('shows route save failures without claiming the draft is configured', async () => {
+    const { scope } = fakeScope({})
+    const face = new JevCardController(scope).inject()
+    view = render(createElement(JevCard, { view: 'page', t: (key: keyof typeof en) => en[key], ...face, loadModels: async () => [{ provider: 'gateway', model: 'flash' }], setField: async () => { throw new Error('Write rejected') } } as never))
+    await act(async () => {})
+    fireEvent.change(view.getByRole('combobox', { name: 'fast Model' }), { target: { value: JSON.stringify(['gateway', 'flash']) } })
+    await act(async () => { view!.getByRole('button', { name: 'Save fast route' }).click() })
+    expect(view.container.textContent).toContain('Write rejected')
+    expect(view.getAllByText('Not configured')).toHaveLength(3)
+  })
+
+  it('refreshes routing values when the host snapshot changes', async () => {
+    const { scope, set } = fakeScope({})
+    const controller = new JevCardController(scope)
+    const props = () => ({ view: 'page', t: (key: keyof typeof en) => en[key], ...controller.inject(), loadModels: async () => [{ provider: 'gateway', model: 'flash' }, { provider: 'gateway', model: 'pro' }, { provider: 'gateway', model: 'reasoner' }] } as never)
+    view = render(createElement(JevCard, props()))
+    await set('modelRouting.enabled', true)
+    await set('modelRouting.routes.reasoning', { provider: 'gateway', model: 'reasoner' })
+    view.rerender(createElement(JevCard, props()))
+    expect((view.getByRole('checkbox', { name: /Model routing/ }) as HTMLInputElement).checked).toBe(true)
+    await act(async () => {})
+    expect((view.getByRole('combobox', { name: 'reasoning Model' }) as HTMLSelectElement).value).toBe(JSON.stringify(['gateway', 'reasoner']))
+  })
+
+  it('rolls back a rejected routing toggle and reports the write failure', async () => {
+    const { scope } = fakeScope({})
+    view = render(createElement(JevCard, { view: 'page', t: (key: keyof typeof en) => en[key], ...new JevCardController(scope).inject(), setField: async () => { throw new Error('Write rejected') } } as never))
+    const toggle = view.getByRole('checkbox', { name: /Model routing/ }) as HTMLInputElement
+    await act(async () => { toggle.click() })
+    expect(toggle.checked).toBe(false)
+    expect(view.container.textContent).toContain('Write rejected')
+  })
+
+  it('keeps route fields visible but disabled for read-only settings', () => {
+    const { scope } = fakeScope({ modelRouting: { routes: { fast: { provider: 'gateway', model: 'flash' } } } })
+    const face = new JevCardController(scope).inject()
+    view = render(createElement(JevCard, { view: 'page', t: (key: keyof typeof en) => en[key], ...face, snapshot: { ...face.snapshot, writable: false } } as never))
+    const input = view.getByRole('combobox', { name: 'fast Model' }) as HTMLSelectElement
+    expect(view.container.textContent).toContain('gateway / flash')
+    expect(input.matches(':disabled')).toBe(true)
+    expect(view.container.textContent).toContain('This client cannot write settings here.')
+  })
+
+  it('preserves unlisted configured routes but prevents saving them', async () => {
+    const { scope } = fakeScope({ modelRouting: { routes: { fast: { provider: 'removed', model: 'old' } } } })
+    view = render(createElement(JevCard, { view: 'page', t: (key: keyof typeof en) => en[key], ...new JevCardController(scope).inject(), loadModels: async () => [{ provider: 'gateway', model: 'flash' }] } as never))
+    await act(async () => {})
+    expect(view.container.textContent).toContain('removed / old')
+    expect((view.getByRole('button', { name: 'Save fast route' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(view.container.textContent).toContain('Not available')
+  })
+
+  it('reports catalog errors without inventing available models', async () => {
+    const { scope } = fakeScope({})
+    view = render(createElement(JevCard, { view: 'page', t: (key: keyof typeof en) => en[key], ...new JevCardController(scope).inject(), loadModels: async () => { throw new Error('Catalog offline') } } as never))
+    await act(async () => {})
+    expect(view.container.textContent).toContain('Catalog offline')
+    expect((view.getByRole('combobox', { name: 'fast Model' }) as HTMLSelectElement).matches(':disabled')).toBe(true)
   })
 
   it('switches the provider and writes a write-only API key', async () => {
